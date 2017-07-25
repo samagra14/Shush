@@ -24,9 +24,9 @@ public class PlaceListAdapter extends RecyclerView.Adapter<PlaceListAdapter.Plac
      * @param mContext {@link Context} Passing in the context from the activity.
      * @param mPlaces {@link PlaceBuffer} A buffer for storing a list of places selected by the user.
      */
-    public PlaceListAdapter(Context mContext, PlaceBuffer mPlaces) {
+    public PlaceListAdapter(Context mContext) {
         this.mContext = mContext;
-        this.mPlaces = mPlaces;
+
     }
 
     /**
