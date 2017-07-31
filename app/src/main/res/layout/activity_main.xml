@@ -130,7 +130,8 @@
             android:background="@color/colorPrimary"
             android:text="@string/add_new_location"
             android:textAppearance="@style/TextAppearance.AppCompat.Button"
-            android:textColor="@android:color/white" />
+            android:textColor="@android:color/white"
+            android:id="@+id/add_location_button"/>
 
         <TextView
             android:layout_width="wrap_content"
