@@ -5,6 +5,7 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -24,11 +25,17 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.PlaceBuffer;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.location.places.ui.PlacePicker;
 import com.mdg.droiders.samagra.shush.data.PlacesContract;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks,
@@ -42,6 +49,7 @@ GoogleApiClient.OnConnectionFailedListener,
     private PlaceListAdapter mAdapter;
     private RecyclerView mRecyclerView;
     private Button addPlaceButton;
+    private GoogleApiClient mClient;
 
     /**
      * Called when the activity is starting.
@@ -54,7 +62,7 @@ GoogleApiClient.OnConnectionFailedListener,
         setContentView(R.layout.activity_main);
         mRecyclerView = (RecyclerView) findViewById(R.id.places_list_recycler_view);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        mAdapter = new PlaceListAdapter(this);
+        mAdapter = new PlaceListAdapter(this,null);
         mRecyclerView.setAdapter(mAdapter);
         addPlaceButton = (Button) findViewById(R.id.add_location_button);
 
@@ -65,7 +73,7 @@ GoogleApiClient.OnConnectionFailedListener,
             }
         });
 
-        GoogleApiClient client = new GoogleApiClient.Builder(this)
+         mClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
@@ -113,6 +121,7 @@ GoogleApiClient.OnConnectionFailedListener,
             ContentValues values = new ContentValues();
             values.put(PlacesContract.PlaceEntry.COLUMN_PLACE_ID,placeId);
             getContentResolver().insert(PlacesContract.PlaceEntry.CONTENT_URI,values);
+            refreshPlacesData();
         }
     }
 
@@ -154,6 +163,7 @@ GoogleApiClient.OnConnectionFailedListener,
     public void onConnected(@Nullable Bundle bundle) {
         Log.i(LOG_TAG,"Api connection successful");
         Toast.makeText(this, "onConnected", Toast.LENGTH_SHORT).show();
+        refreshPlacesData();
 
     }
 
@@ -177,6 +187,27 @@ GoogleApiClient.OnConnectionFailedListener,
         Log.i(LOG_TAG,"API Connection client suspended.");
         Toast.makeText(this, "onConectionFailed", Toast.LENGTH_SHORT).show();
 
+    }
+
+    public void refreshPlacesData(){
+        Uri uri = PlacesContract.PlaceEntry.CONTENT_URI;
+        Cursor dataCursor = getContentResolver().query(uri,
+                null,
+                null,
+                null,null,null);
+        if (dataCursor==null||dataCursor.getCount()==0) return;
+        List<String> placeIds = new ArrayList<String>();
+        while (dataCursor.moveToNext()){
+            placeIds.add(dataCursor.getString(dataCursor.getColumnIndex(PlacesContract.PlaceEntry.COLUMN_PLACE_ID)));
+        }
+        PendingResult<PlaceBuffer> placeBufferPendingResult = Places.GeoDataApi.getPlaceById(mClient,
+                placeIds.toArray(new String[placeIds.size()]));
+        placeBufferPendingResult.setResultCallback(new ResultCallback<PlaceBuffer>() {
+            @Override
+            public void onResult(@NonNull PlaceBuffer places) {
+                mAdapter.swapPlaces(places);
+            }
+        });
     }
 
     public void onLocationPermissionClicked (){
