@@ -1,12 +1,16 @@
 package com.mdg.droiders.samagra.shush;
 
 import android.Manifest;
+import android.app.NotificationManager;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -19,6 +23,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.Switch;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -37,6 +43,7 @@ import com.mdg.droiders.samagra.shush.data.PlacesContract;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class MainActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks,
 GoogleApiClient.OnConnectionFailedListener,
@@ -50,6 +57,9 @@ GoogleApiClient.OnConnectionFailedListener,
     private RecyclerView mRecyclerView;
     private Button addPlaceButton;
     private GoogleApiClient mClient;
+    private Geofencing mGeofencing;
+    private boolean mIsEnabled;
+    private CheckBox mRingerPermissionCheckBox;
 
     /**
      * Called when the activity is starting.
@@ -64,6 +74,31 @@ GoogleApiClient.OnConnectionFailedListener,
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mAdapter = new PlaceListAdapter(this,null);
         mRecyclerView.setAdapter(mAdapter);
+
+        mRingerPermissionCheckBox = (CheckBox) findViewById(R.id.ringer_permissions_checkbox);
+        mRingerPermissionCheckBox.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                onRingerPermissionsClicked();
+            }
+        });
+
+
+        Switch onOffSwitch = (Switch) findViewById(R.id.enable_switch);
+        mIsEnabled = getPreferences(MODE_PRIVATE).getBoolean(getString(R.string.setting_enabled),false);
+        onOffSwitch.setChecked(mIsEnabled);
+        onOffSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
+                editor.putBoolean(getString(R.string.setting_enabled),isChecked);
+                editor.commit();
+                if (isChecked) mGeofencing.registerAllGeofences();
+                else mGeofencing.unRegisterAllGeofences();
+            }
+        });
+
+
         addPlaceButton = (Button) findViewById(R.id.add_location_button);
 
         addPlaceButton.setOnClickListener(new View.OnClickListener() {
@@ -80,6 +115,8 @@ GoogleApiClient.OnConnectionFailedListener,
                 .addApi(Places.GEO_DATA_API)
                 .enableAutoManage(this,this)
                 .build();
+        mGeofencing = new Geofencing(mClient,this);
+
     }
 
     /**
@@ -137,6 +174,15 @@ GoogleApiClient.OnConnectionFailedListener,
         else {
             locationPermissionsCheckBox.setChecked(true);
             locationPermissionsCheckBox.setEnabled(false);
+        }
+
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT>=24 && !notificationManager.isNotificationPolicyAccessGranted()){
+            mRingerPermissionCheckBox.setChecked(false);
+        }
+        else {
+            mRingerPermissionCheckBox.setChecked(true);
+            mRingerPermissionCheckBox.setEnabled(false);
         }
     }
 
@@ -206,8 +252,15 @@ GoogleApiClient.OnConnectionFailedListener,
             @Override
             public void onResult(@NonNull PlaceBuffer places) {
                 mAdapter.swapPlaces(places);
+                mGeofencing.updateGeofencesList(places);
+                if (mIsEnabled) mGeofencing.registerAllGeofences();
             }
         });
+    }
+
+    private void onRingerPermissionsClicked(){
+        Intent intent = new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
+        startActivity(intent);
     }
 
     public void onLocationPermissionClicked (){
