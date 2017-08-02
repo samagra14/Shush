@@ -19,8 +19,17 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
     private static final String LOG_TAG = GeofenceBroadcastReceiver.class.getName();
 
+    /***
+     * Handles the Broadcast message sent when the Geofence Transition is triggered
+     * Careful here though, this is running on the main thread so make sure you start an AsyncTask for
+     * anything that takes longer than say 10 second to run
+     *
+     * @param context
+     * @param intent
+     */
     @Override
     public void onReceive(Context context, Intent intent) {
+        //get the geofencing event sent from the intent
         GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
 
         if (geofencingEvent.hasError()){
@@ -28,8 +37,10 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
             return;
         }
 
+        //get the transition type
         int geoFenceTransition = geofencingEvent.getGeofenceTransition();
 
+        //Check which transition type has triggered the event
         if (geoFenceTransition== Geofence.GEOFENCE_TRANSITION_ENTER){
             setRingerMode(context,AudioManager.RINGER_MODE_SILENT);
         }
@@ -41,9 +52,17 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
             return;
         }
 
+        //Send the notification
         sendNotification(context,geoFenceTransition);
     }
 
+    /**
+     * Changes the ringer mode on the device to either silent or back to normal
+     *
+     * @param context The context to access AUDIO_SERVICE
+     * @param mode    The desired mode to switch device to, can be AudioManager.RINGER_MODE_SILENT or
+     *                AudioManager.RINGER_MODE_NORMAL
+     */
     private void setRingerMode(Context context, int mode){
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
@@ -53,7 +72,17 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
         }
     }
 
+    /**
+     * Posts a notification in the notification bar when a transition is detected
+     * Uses different icon drawables for different transition types
+     * If the user clicks the notification, control goes to the MainActivity
+     *
+     * @param context        The calling context for building a task stack
+     * @param transition The geofence transition type, can be Geofence.GEOFENCE_TRANSITION_ENTER
+     *                       or Geofence.GEOFENCE_TRANSITION_EXIT
+     */
     private void sendNotification(Context context,int transition){
+        //create an explicit content intent that starts the main activity
         Intent notificationIntent = new Intent(context, MainActivity.class);
 
         //Construct a task stack

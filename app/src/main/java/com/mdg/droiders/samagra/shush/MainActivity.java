@@ -48,11 +48,13 @@ public class MainActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks,
 GoogleApiClient.OnConnectionFailedListener,
         LoaderManager.LoaderCallbacks<Cursor>{
-    private static final String LOG_TAG = "MainActivity";
 
+    //constants
+    private static final String LOG_TAG = "MainActivity";
     private static final int PERMISSIONS_REQUEST_FINE_LOCATION = 111;
     private static final int PLACE_PICKER_REQUEST = 1;
 
+    //member variables
     private PlaceListAdapter mAdapter;
     private RecyclerView mRecyclerView;
     private Button addPlaceButton;
@@ -142,6 +144,13 @@ GoogleApiClient.OnConnectionFailedListener,
 
     }
 
+    /***
+     * Called when the Place Picker Activity returns back with a selected place (or after canceling)
+     *
+     * @param requestCode The request code passed when calling startActivityForResult
+     * @param resultCode  The result code specified by the second activity
+     * @param data        The Intent that carries the result data.
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 

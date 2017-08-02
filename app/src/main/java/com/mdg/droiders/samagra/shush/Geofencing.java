@@ -24,9 +24,11 @@ import java.util.List;
 
 public class Geofencing implements ResultCallback {
 
+    //constants
     private static final long GEOFENCE_TIMEOUT = 86400000;//24 hours in milliseconds
     private static final int GEOFENCE_RADIUS = 50;
     private static final String LOG_TAG = Geofencing.class.getName();
+
 
     private GoogleApiClient mClient;
     private Context mContext;
@@ -40,6 +42,15 @@ public class Geofencing implements ResultCallback {
         mGeofencePendingIntent = null;
     }
 
+
+    /**
+     * Registers the list of geofences specified in mGeofenceList with Google Play Services
+     * Uses {@code #mClient } to connect to google play services
+     * Uses {@link #getGeofenceRequest()} to get the list of Geofences to be registered
+     * Uses {@link #getGeofencePendingIntent()} to get the pending intent to launch the intent service
+     * when the geofence is triggered
+     * Triggers {@link #onResult(Result)} when the geofences have been registered successfully
+     */
     public void registerAllGeofences() {
         if (mClient == null || !mClient.isConnected()
                 || mGeofenceList == null || mGeofenceList.size() == 0) {
@@ -56,12 +67,25 @@ public class Geofencing implements ResultCallback {
         }
     }
 
+    /**
+     * Unregisters all the Geofences created by this app FROM Google Play Services
+     * Uses {@link #mClient } to connect to the Google Play Services
+     * Uses {@link #getGeofencePendingIntent()} to get the pending intent passed
+     * when registering the geofences in the first place
+     *Triggers {@link #onResult(Result)} when the geofences have been unregistered successfully.
+     */
     public void unRegisterAllGeofences(){
         if (mClient==null|| !mClient.isConnected()) return;
         LocationServices.GeofencingApi.removeGeofences(mClient,
                 getGeofencePendingIntent()).setResultCallback(this);
     }
 
+    /**
+     * Updates the local {@link ArrayList} of geofences from the data in the passed list
+     *Uses the place id defined by the API as the geofence object id.
+     *
+     * @param places the placeBuffer result of the getPlaceByid call.
+     */
     public void updateGeofencesList(PlaceBuffer places){
         mGeofenceList = new ArrayList<>();
         if (places==null || places.getCount()==0) return;
@@ -80,6 +104,13 @@ public class Geofencing implements ResultCallback {
         }
     }
 
+
+    /***
+     *  creates a {@link GeofencingRequest} request object using the mGeofenceList , Arraylist of geofences.
+     *  Used by {@link #registerAllGeofences()}
+     *
+     * @return the GeofencingRequest object.
+     */
     private GeofencingRequest getGeofenceRequest(){
         GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
         builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER);
@@ -87,8 +118,16 @@ public class Geofencing implements ResultCallback {
         return builder.build();
     }
 
+
+    /**
+     * creates a PendingIntent object
+     * Used by {@link #registerAllGeofences()}
+     *
+     * @return the PendingIntent object
+     */
     private PendingIntent getGeofencePendingIntent(){
         if (mGeofencePendingIntent!=null){
+            //reuse the pending intent if we already have it.
             return mGeofencePendingIntent;
         }
         Intent intent = new Intent(mContext,GeofenceBroadcastReceiver.class);
