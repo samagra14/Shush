@@ -25,7 +25,7 @@ import java.util.List;
 public class Geofencing implements ResultCallback {
 
     //constants
-    private static final long GEOFENCE_TIMEOUT = 86400000;//24 hours in milliseconds
+    private static final long GEOFENCE_TIMEOUT = 7*24*60*60*1000;//7 days in milliseconds
     private static final int GEOFENCE_RADIUS = 50;
     private static final String LOG_TAG = Geofencing.class.getName();
 
