@@ -272,7 +272,7 @@ GoogleApiClient.OnConnectionFailedListener,
         startActivity(intent);
     }
 
-    public void onLocationPermissionClicked (){
+    public void onLocationPermissionClicked (View view){
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                 PERMISSIONS_REQUEST_FINE_LOCATION);
     }
