@@ -19,6 +19,7 @@ public class PlacesContract {
     //Possible paths which can be accessed by this uri
     //This is the path for the places table.
     public static final String PATH = "places";
+    public static final String TIME_PATH = "time";
 
     // Contract class for a single place entry
     public static final class PlaceEntry implements BaseColumns{
@@ -28,5 +29,24 @@ public class PlacesContract {
         //Table constants.
         public static final String TABLE_NAME = "places";
         public static final String COLUMN_PLACE_ID = "placeID";
+    }
+
+    //Contract class for time entries
+    public static final class TimeEntry implements BaseColumns{
+
+        //Time entry content Uri
+        public static final Uri CONTENT_URI = BASE_CONTENT_URI.buildUpon().appendPath(TIME_PATH).build();
+        //Table constants
+        public static final String TABLE_NAME = "time";
+        public static final String COLUMN_TIME_ID = "timeID";
+        public static final String COLUMN_START_TIME = "startTime";
+        public static final String COLUMN_END_TIME = "endTime";
+        public static final String COLUMN_MONDAY = "monday";
+        public static final String COLUMN_TUESDAY = "tuesday";
+        public static final String COLUMN_WEDNESDAY = "wednesday";
+        public static final String COLUMN_THURSDAY = "thursday";
+        public static final String COLUMN_FRIDAY = "friday";
+        public static final String COLUMN_SATURDAY = "saturday";
+        public static final String COLUMN_SUNDAY = "monday";
     }
 }
