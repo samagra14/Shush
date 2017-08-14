@@ -38,7 +38,6 @@ public class PlacesContract {
         public static final Uri CONTENT_URI = BASE_CONTENT_URI.buildUpon().appendPath(TIME_PATH).build();
         //Table constants
         public static final String TABLE_NAME = "time";
-        public static final String COLUMN_TIME_ID = "timeID";
         public static final String COLUMN_START_TIME = "startTime";
         public static final String COLUMN_END_TIME = "endTime";
         public static final String COLUMN_MONDAY = "monday";
@@ -47,6 +46,6 @@ public class PlacesContract {
         public static final String COLUMN_THURSDAY = "thursday";
         public static final String COLUMN_FRIDAY = "friday";
         public static final String COLUMN_SATURDAY = "saturday";
-        public static final String COLUMN_SUNDAY = "monday";
+        public static final String COLUMN_SUNDAY = "sunday";
     }
 }

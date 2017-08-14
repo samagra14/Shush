@@ -87,6 +87,7 @@ public class PlacesContentProvider extends ContentProvider {
                         null,
                         sortOrder);
                 break;
+            //query for the time directory.
             case TIME:
                 retCursor = db.query(PlacesContract.TimeEntry.TABLE_NAME,
                         projection,
@@ -96,6 +97,7 @@ public class PlacesContentProvider extends ContentProvider {
                         null,
                         sortOrder);
                 break;
+            //query for a single time.
             case SINGLE_TIME_WITH_ID:
                 String id = uri.getPathSegments().get(1);
                 retCursor = db.query(PlacesContract.TimeEntry.TABLE_NAME,
@@ -158,6 +160,7 @@ public class PlacesContentProvider extends ContentProvider {
                     throw new SQLException("Unable to insert row into " + uri);
                 }
                 break;
+            //insert new values to the database
             case TIME:
                 long timeId = db.insert(PlacesContract.TimeEntry.TABLE_NAME,null,contentValues);
                 if (timeId>0){
@@ -202,8 +205,11 @@ public class PlacesContentProvider extends ContentProvider {
                 // Use selections/selectionArgs to filter for this ID
                 deletedRows = db.delete(PlacesContract.PlaceEntry.TABLE_NAME,"id=?",new String[]{id});
                 break;
+            // Handle the single item case, recognized by the ID included in the URI path
             case SINGLE_TIME_WITH_ID:
+                // Get the place ID from the URI path
                 String timeId = uri.getPathSegments().get(1);
+                // Use selections/selectionArgs to filter for this ID
                 deletedRows = db.delete(PlacesContract.TimeEntry.TABLE_NAME,"id=?", new String[]{timeId});
                 break;
             default:
@@ -245,7 +251,9 @@ public class PlacesContentProvider extends ContentProvider {
                         new String[]{id});
                 break;
             case SINGLE_TIME_WITH_ID:
+                // Get the place ID from the URI path
                 id = uri.getPathSegments().get(1);
+                // Use selections/selectionArgs to filter for this ID
                 affectedRows = db.update(PlacesContract.TimeEntry.TABLE_NAME,contentValues,"id=?",
                         new String[]{id});
                 break;
