@@ -8,12 +8,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.media.AudioManager;
+import android.os.Build;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingEvent;
-import com.mdg.droiders.samagra.shush.utils.RingerUtils;
 
 public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
@@ -32,8 +32,8 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
         //get the geofencing event sent from the intent
         GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
 
-        if (geofencingEvent.hasError()) {
-            Log.e(LOG_TAG, String.format("Error Code : %s", geofencingEvent.getErrorCode()));
+        if (geofencingEvent.hasError()){
+            Log.e(LOG_TAG,String.format("Error Code : %s",geofencingEvent.getErrorCode()));
             return;
         }
 
@@ -41,17 +41,35 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
         int geoFenceTransition = geofencingEvent.getGeofenceTransition();
 
         //Check which transition type has triggered the event
-        if (geoFenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER) {
-            RingerUtils.setRingerMode(context, AudioManager.RINGER_MODE_SILENT);
-        } else if (geoFenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT) {
-            RingerUtils.setRingerMode(context, AudioManager.RINGER_MODE_NORMAL);
-        } else {
-            Log.e(LOG_TAG, String.format("Unknown Transition , %d", geoFenceTransition));
+        if (geoFenceTransition== Geofence.GEOFENCE_TRANSITION_ENTER){
+            setRingerMode(context,AudioManager.RINGER_MODE_SILENT);
+        }
+        else if (geoFenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT){
+            setRingerMode(context,AudioManager.RINGER_MODE_NORMAL);
+        }
+        else {
+            Log.e(LOG_TAG,String.format("Unknown Transition , %d",geoFenceTransition));
             return;
         }
 
         //Send the notification
-        sendNotification(context, geoFenceTransition);
+        sendNotification(context,geoFenceTransition);
+    }
+
+    /**
+     * Changes the ringer mode on the device to either silent or back to normal
+     *
+     * @param context The context to access AUDIO_SERVICE
+     * @param mode    The desired mode to switch device to, can be AudioManager.RINGER_MODE_SILENT or
+     *                AudioManager.RINGER_MODE_NORMAL
+     */
+    private void setRingerMode(Context context, int mode){
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
+        if (Build.VERSION.SDK_INT<24 || (Build.VERSION.SDK_INT>=24 && !notificationManager.isNotificationPolicyAccessGranted())){
+            AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+            audioManager.setRingerMode(mode);
+        }
     }
 
     /**
@@ -59,11 +77,11 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
      * Uses different icon drawables for different transition types
      * If the user clicks the notification, control goes to the MainActivity
      *
-     * @param context    The calling context for building a task stack
+     * @param context        The calling context for building a task stack
      * @param transition The geofence transition type, can be Geofence.GEOFENCE_TRANSITION_ENTER
-     *                   or Geofence.GEOFENCE_TRANSITION_EXIT
+     *                       or Geofence.GEOFENCE_TRANSITION_EXIT
      */
-    private void sendNotification(Context context, int transition) {
+    private void sendNotification(Context context,int transition){
         //create an explicit content intent that starts the main activity
         Intent notificationIntent = new Intent(context, MainActivity.class);
 
@@ -77,19 +95,20 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
         stackBuilder.addNextIntent(notificationIntent);
 
         //Get a pending intent consisting the entire backstack
-        PendingIntent notificationPendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent notificationPendingIntent = stackBuilder.getPendingIntent(0,PendingIntent.FLAG_UPDATE_CURRENT);
 
         //Get a notification builder
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
 
         //Check the transition type to display the relevant icon image
 
-        if (transition == Geofence.GEOFENCE_TRANSITION_ENTER) {
+        if (transition == Geofence.GEOFENCE_TRANSITION_ENTER){
             builder.setSmallIcon(R.drawable.ic_volume_off_white_24dp)
                     .setLargeIcon(BitmapFactory.decodeResource(context.getResources(),
                             R.drawable.ic_volume_off_white_24dp))
                     .setContentTitle(context.getString(R.string.silent_mode_activated));
-        } else if (transition == Geofence.GEOFENCE_TRANSITION_EXIT) {
+        }
+        else if (transition== Geofence.GEOFENCE_TRANSITION_EXIT){
             builder.setSmallIcon(R.drawable.ic_volume_up_white_24dp)
                     .setLargeIcon(BitmapFactory.decodeResource(context.getResources(),
                             R.drawable.ic_volume_up_white_24dp))
@@ -106,7 +125,7 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
         NotificationManager notificationManager = (NotificationManager)
                 context.getSystemService(Context.NOTIFICATION_SERVICE);
 
-        notificationManager.notify(0, builder.build());
+        notificationManager.notify(0,builder.build());
     }
 
 }
