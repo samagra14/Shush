@@ -24,6 +24,8 @@ public class PlacesContentProvider extends ContentProvider {
     // and related ints (101, 102, ..) for items in that directory.
     public static final int PLACES = 100;
     public static final int SINGLE_PLACE_WITH_ID = 101;
+    public static final int TIME = 200;
+    public static final int SINGLE_TIME_WITH_ID = 201;
 
     //A member variable of the placesDbHelper to deal with the places initialised in the onCreate.
     private PlacesDbHelper mPlacesDbHelper;
@@ -42,6 +44,8 @@ public class PlacesContentProvider extends ContentProvider {
         //add uris for detection
         uriMatcher.addURI(PlacesContract.AUTHORITY, PlacesContract.PATH, PLACES);
         uriMatcher.addURI(PlacesContract.AUTHORITY, PlacesContract.PATH + "/#", SINGLE_PLACE_WITH_ID);
+        uriMatcher.addURI(PlacesContract.AUTHORITY,PlacesContract.TIME_PATH,TIME);
+        uriMatcher.addURI(PlacesContract.AUTHORITY,PlacesContract.TIME_PATH + "/#",SINGLE_TIME_WITH_ID);
         return uriMatcher;
     }
 
@@ -79,6 +83,27 @@ public class PlacesContentProvider extends ContentProvider {
                         projection,
                         selection,
                         selectionArgs,
+                        null,
+                        null,
+                        sortOrder);
+                break;
+            //query for the time directory.
+            case TIME:
+                retCursor = db.query(PlacesContract.TimeEntry.TABLE_NAME,
+                        projection,
+                        selection,
+                        selectionArgs,
+                        null,
+                        null,
+                        sortOrder);
+                break;
+            //query for a single time.
+            case SINGLE_TIME_WITH_ID:
+                String id = uri.getPathSegments().get(1);
+                retCursor = db.query(PlacesContract.TimeEntry.TABLE_NAME,
+                        projection,
+                        "id =?",
+                        new String[]{id},
                         null,
                         null,
                         sortOrder);
@@ -135,6 +160,16 @@ public class PlacesContentProvider extends ContentProvider {
                     throw new SQLException("Unable to insert row into " + uri);
                 }
                 break;
+            //insert new values to the database
+            case TIME:
+                long timeId = db.insert(PlacesContract.TimeEntry.TABLE_NAME,null,contentValues);
+                if (timeId>0){
+                    returnUri= ContentUris.withAppendedId(uri,timeId);
+                }
+                else{
+                    throw new SQLException("Unable to insert row into "+ uri);
+                }
+                break;
             //default case that throws exception
             default:
                 throw  new UnsupportedOperationException("Unknown Uri : "+ uri);
@@ -160,7 +195,7 @@ public class PlacesContentProvider extends ContentProvider {
 
         // Get access to the database and write URI matching code to recognize a single item
         final SQLiteDatabase db = mPlacesDbHelper.getWritableDatabase();
-        int deletedRows;
+        int deletedRows=0;
         int match = sUriMatcher.match(uri);// Keep track of the number of deleted places
         switch (match){
             // Handle the single item case, recognized by the ID included in the URI path
@@ -169,6 +204,13 @@ public class PlacesContentProvider extends ContentProvider {
                 String id = uri.getPathSegments().get(1);
                 // Use selections/selectionArgs to filter for this ID
                 deletedRows = db.delete(PlacesContract.PlaceEntry.TABLE_NAME,"id=?",new String[]{id});
+                break;
+            // Handle the single item case, recognized by the ID included in the URI path
+            case SINGLE_TIME_WITH_ID:
+                // Get the place ID from the URI path
+                String timeId = uri.getPathSegments().get(1);
+                // Use selections/selectionArgs to filter for this ID
+                deletedRows = db.delete(PlacesContract.TimeEntry.TABLE_NAME,"id=?", new String[]{timeId});
                 break;
             default:
                 throw new UnsupportedOperationException("Invalid uri: "+ uri);
@@ -199,12 +241,21 @@ public class PlacesContentProvider extends ContentProvider {
         int affectedRows;        // Keep track of the number of updated places
 
         int match = sUriMatcher.match(uri);
+        String id;
         switch (match){
             case SINGLE_PLACE_WITH_ID:
                 // Get the place ID from the URI path
-                String id = uri.getPathSegments().get(1);
+                id = uri.getPathSegments().get(1);
                 // Use selections/selectionArgs to filter for this ID
-                affectedRows = db.update(PlacesContract.PlaceEntry.TABLE_NAME,contentValues,"_id=?",new String[]{id});
+                affectedRows = db.update(PlacesContract.PlaceEntry.TABLE_NAME,contentValues,"_id=?",
+                        new String[]{id});
+                break;
+            case SINGLE_TIME_WITH_ID:
+                // Get the place ID from the URI path
+                id = uri.getPathSegments().get(1);
+                // Use selections/selectionArgs to filter for this ID
+                affectedRows = db.update(PlacesContract.TimeEntry.TABLE_NAME,contentValues,"id=?",
+                        new String[]{id});
                 break;
             // Default exception
             default:

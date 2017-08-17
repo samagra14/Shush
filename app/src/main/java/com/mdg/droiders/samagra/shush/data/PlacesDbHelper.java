@@ -30,7 +30,20 @@ public class PlacesDbHelper extends SQLiteOpenHelper {
                 PlacesContract.PlaceEntry.COLUMN_PLACE_ID + " TEXT NOT NULL, " +
                 "UNIQUE (" + PlacesContract.PlaceEntry.COLUMN_PLACE_ID + ") ON CONFLICT REPLACE" +
                 "); ";
+        final String CREATE_TIME_TABLE = "CREATE TABLE " + PlacesContract.TimeEntry.TABLE_NAME + " ("+
+                PlacesContract.TimeEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                PlacesContract.TimeEntry.COLUMN_START_TIME + " INTEGER NOT NULL, " +
+                PlacesContract.TimeEntry.COLUMN_END_TIME + " INTEGER, " +
+                PlacesContract.TimeEntry.COLUMN_TUESDAY + " INTEGER NOT NULL, " +
+                PlacesContract.TimeEntry.COLUMN_WEDNESDAY + " INTEGER NOT NULL, " +
+                PlacesContract.TimeEntry.COLUMN_THURSDAY + " INTEGER NOT NULL, " +
+                PlacesContract.TimeEntry.COLUMN_FRIDAY + " INTEGER NOT NULL, " +
+                PlacesContract.TimeEntry.COLUMN_SATURDAY + " INTEGER NOT NULL, " +
+                PlacesContract.TimeEntry.COLUMN_SUNDAY + " INTEGER NOT NULL, " +
+                PlacesContract.TimeEntry.COLUMN_MONDAY + " INTEGER NOT NULL " +
+                "); ";
 
+        sqLiteDatabase.execSQL(CREATE_TIME_TABLE);
         sqLiteDatabase.execSQL(CREATE_PLACES_TABLE);
     }
 
@@ -38,6 +51,7 @@ public class PlacesDbHelper extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
         //Simply drop the table and create a new table
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + PlacesContract.PlaceEntry.TABLE_NAME);
+        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + PlacesContract.TimeEntry.TABLE_NAME);
 
         //create a new table
         onCreate(sqLiteDatabase);
