@@ -268,7 +268,10 @@ GoogleApiClient.OnConnectionFailedListener,
     }
 
     private void onRingerPermissionsClicked(){
-        Intent intent = new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
+        Intent intent = null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            intent = new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
+        }
         startActivity(intent);
     }
 
