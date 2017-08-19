@@ -7,7 +7,7 @@
 Shush Me is an intelligent manager for your phone’s ringer. It manages the status of your ringer based on your location and /or your schedule. Now, gone are the days when you were caught by your teacher because of your phone.
 
 
-##Features
+## Features
  1. Manage your ringer on the basis of  your location.
  1. Manage your ringer on the basis of your schedule.
  1. When you turn your ringer off for a movie, meeting, meal, or nap, this app turns it back on afterwards.
@@ -19,7 +19,7 @@ Shush Me is an intelligent manager for your phone’s ringer. It manages the sta
 ## Getting Started
 These instructions will get you a copy of the project up and running.
 
-####Prerequisites
+#### Prerequisites
 * Android Studio
 * Google Play Repository
 
