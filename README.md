@@ -50,5 +50,5 @@ These instructions will get you a copy of the project up and running.
 
 Shush is registered under MIT License.
 
-For more information, see [license](LICENSE.md).
+For more information, see [license](License.md).
 
