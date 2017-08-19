@@ -40,7 +40,7 @@ These instructions will get you a copy of the project up and running.
 ## How you can help
 
 * Make us aware of the imperfections and bugs by opening [issues](https://github.com/samagra14/Shush/issues)
-* Join our [Chat Room](https://groups.google.com/forum/#!forum/openopps-platform) and introduce yourself, please ask any general questions here -- how the product is supposed to work, usability issues, technical questions, whatever you want to know, we want to hear about.  If you are interested in collaborating with us, let us know.
+* Join our [Chat Room](https://mdg.sdslabs.co/chat) and introduce yourself, please ask any general questions here -- how the product is supposed to work, usability issues, technical questions, whatever you want to know, we want to hear about.  If you are interested in collaborating with us, let us know.
 * Read our [Contribution Guide](CONTRIBUTING.md) -- everything you do with us is a contribution to the public domain, there are also some tips for getting started
 * Dive into our [existing issues](https://github.com/samagra14/Shush/issues) -- there are both dev and design opportunities there
 
