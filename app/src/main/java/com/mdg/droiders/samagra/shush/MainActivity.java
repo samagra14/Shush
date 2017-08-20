@@ -58,6 +58,7 @@ GoogleApiClient.OnConnectionFailedListener,
     private PlaceListAdapter mAdapter;
     private RecyclerView mRecyclerView;
     private Button addPlaceButton;
+    private Button addAlarmButton;
     private GoogleApiClient mClient;
     private Geofencing mGeofencing;
     private boolean mIsEnabled;
@@ -107,6 +108,15 @@ GoogleApiClient.OnConnectionFailedListener,
             @Override
             public void onClick(View view) {
                 onAddPlaceButtonClicked();
+            }
+        });
+
+        addAlarmButton = findViewById(R.id.add_alarm_button);
+
+        addAlarmButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(MainActivity.this, TimeListActivity.class));
             }
         });
 

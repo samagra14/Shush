@@ -133,6 +133,16 @@
             android:textColor="@android:color/white"
             android:id="@+id/add_location_button"/>
 
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@color/colorPrimary"
+            android:text="@string/add_new_time"
+            android:textAppearance="@style/TextAppearance.AppCompat.Button"
+            android:textColor="@android:color/white"
+            android:id="@+id/add_alarm_button"/>
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

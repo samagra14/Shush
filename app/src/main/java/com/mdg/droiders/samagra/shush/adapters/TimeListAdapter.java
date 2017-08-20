@@ -3,6 +3,7 @@ package com.mdg.droiders.samagra.shush.adapters;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -13,10 +14,12 @@ import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import com.mdg.droiders.samagra.shush.AlarmScheduler;
 import com.mdg.droiders.samagra.shush.R;
 import com.mdg.droiders.samagra.shush.data.PlacesContract;
 import com.mdg.droiders.samagra.shush.fragments.TimePickerDialogFragment;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
@@ -30,19 +33,16 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
     private static final String DIALOG_TIME_TAG = "time_picker_dialog_tag";
     private static final SimpleDateFormat DISPLAY_DATE_FORMAT =
             new SimpleDateFormat("hh:mm a", Locale.ENGLISH);
+    private static final String LOG_TAG = "Samagra/TLA/";
 
     private Context mContext;
     private Cursor timeDataCursor;
+    private AlarmScheduler alarmScheduler;
 
-    public TimeListAdapter(Context mContext, Cursor timeDataCursor) {
+    public TimeListAdapter(Context mContext) {
         this.mContext = mContext;
-        this.timeDataCursor = timeDataCursor;
-         /*=mContext.getContentResolver().query(
-                PlacesContract.TimeEntry.CONTENT_URI,
-                null,
-                null,
-                null,
-                null);*/
+        refreshCursor();
+        alarmScheduler = new AlarmScheduler(mContext);
     }
 
     @Override
@@ -54,22 +54,15 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
 
     @Override
     public void onBindViewHolder(TimeRowHolder holder, int position) {
-        if (timeDataCursor.getCount() == 0) {
-            return;
-        }
         if (position == timeDataCursor.getCount()) {
-            holder.startTime.setVisibility(View.INVISIBLE);
-            holder.endTime.setVisibility(View.INVISIBLE);
-            holder.monday.setVisibility(View.INVISIBLE);
-            holder.tuesday.setVisibility(View.INVISIBLE);
-            holder.wednesday.setVisibility(View.INVISIBLE);
-            holder.thursday.setVisibility(View.INVISIBLE);
-            holder.friday.setVisibility(View.INVISIBLE);
-            holder.saturday.setVisibility(View.INVISIBLE);
-            holder.sunday.setVisibility(View.INVISIBLE);
+            holder.itemView.setVisibility(View.INVISIBLE);
             return;
         }
+        holder.itemView.setVisibility(View.VISIBLE);
         if (timeDataCursor.moveToPosition(position)) {
+            int id = timeDataCursor.getInt(
+                    timeDataCursor.getColumnIndexOrThrow(PlacesContract.TimeEntry._ID)
+            );
             String startTime = timeDataCursor.getString(
                     timeDataCursor.getColumnIndexOrThrow(PlacesContract.TimeEntry.COLUMN_START_TIME)
             );
@@ -97,7 +90,7 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
             int sunday = timeDataCursor.getInt(
                     timeDataCursor.getColumnIndexOrThrow(PlacesContract.TimeEntry.COLUMN_SUNDAY)
             );
-            holder.id = timeDataCursor.getColumnIndexOrThrow(PlacesContract.TimeEntry._ID);
+            holder.id = id;
             holder.startTime.setText(startTime);
             holder.endTime.setText(endTime);
             holder.monday.setChecked(monday == 1);
@@ -116,13 +109,40 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
         return timeDataCursor.getCount() + 1;
     }
 
+    public void addItem() {
+        Calendar calendar = Calendar.getInstance();
+        ContentValues values = new ContentValues();
+        values.put(PlacesContract.TimeEntry.COLUMN_START_TIME,
+                DISPLAY_DATE_FORMAT.format(calendar.getTime()));
+        values.put(PlacesContract.TimeEntry.COLUMN_END_TIME,
+                DISPLAY_DATE_FORMAT.format(calendar.getTime()));
+        values.put(PlacesContract.TimeEntry.COLUMN_MONDAY, 0);
+        values.put(PlacesContract.TimeEntry.COLUMN_TUESDAY, 0);
+        values.put(PlacesContract.TimeEntry.COLUMN_WEDNESDAY, 0);
+        values.put(PlacesContract.TimeEntry.COLUMN_THURSDAY, 0);
+        values.put(PlacesContract.TimeEntry.COLUMN_FRIDAY, 0);
+        values.put(PlacesContract.TimeEntry.COLUMN_SATURDAY, 0);
+        values.put(PlacesContract.TimeEntry.COLUMN_SUNDAY, 0);
+        mContext.getContentResolver().insert(
+                PlacesContract.TimeEntry.CONTENT_URI,
+                values
+        );
+        closeCursor();
+        refreshCursor();
+        notifyItemInserted(timeDataCursor.getCount() - 1);
+    }
+
+    public void closeCursor() {
+        timeDataCursor.close();
+    }
+
     private boolean refreshData(TimeRowHolder holder) {
 
         ContentValues values = new ContentValues();
-        values.put(PlacesContract.TimeEntry.COLUMN_START_TIME,
-                holder.startTime.getText().toString());
-        values.put(PlacesContract.TimeEntry.COLUMN_END_TIME,
-                holder.endTime.getText().toString());
+        String startTimeString = holder.startTime.getText().toString();
+        String endTimeString = holder.endTime.getText().toString();
+        values.put(PlacesContract.TimeEntry.COLUMN_START_TIME, startTimeString);
+        values.put(PlacesContract.TimeEntry.COLUMN_END_TIME, endTimeString);
         values.put(PlacesContract.TimeEntry.COLUMN_MONDAY,
                 holder.monday.isChecked() ? 1 : 0);
         values.put(PlacesContract.TimeEntry.COLUMN_TUESDAY,
@@ -138,17 +158,45 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
         values.put(PlacesContract.TimeEntry.COLUMN_SUNDAY,
                 holder.sunday.isChecked() ? 1 : 0);
 
-        String selection = PlacesContract.TimeEntry._ID + " = ?";
-        String[] selectionArgs = {String.valueOf(holder.id)};
         int affectedRows = mContext.getContentResolver().update(
-                PlacesContract.TimeEntry.CONTENT_URI, values, selection, selectionArgs
+                Uri.withAppendedPath(PlacesContract.TimeEntry.CONTENT_URI, String.valueOf(holder.id))
+                , values, null, null
         );
+        Calendar startTime = Calendar.getInstance();
+        Calendar endTime = Calendar.getInstance();
+        try {
+            startTime.setTime(DISPLAY_DATE_FORMAT.parse(startTimeString));
+            endTime.setTime(DISPLAY_DATE_FORMAT.parse(endTimeString));
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        closeCursor();
+        refreshCursor();
+        alarmScheduler.setWeeklyAlarm(startTime, endTime, getDayArr(holder), holder.id);
         return affectedRows == 1;
+    }
+
+    public void refreshCursor() {
+        timeDataCursor = mContext.getContentResolver().query(
+                PlacesContract.TimeEntry.CONTENT_URI, null, null, null, null);
+    }
+
+    private boolean[] getDayArr(TimeRowHolder holder) {
+        return new boolean[]{
+                holder.monday.isChecked(),
+                holder.tuesday.isChecked(),
+                holder.wednesday.isChecked(),
+                holder.thursday.isChecked(),
+                holder.friday.isChecked(),
+                holder.saturday.isChecked(),
+                holder.sunday.isChecked()
+        };
     }
 
     class TimeRowHolder extends RecyclerView.ViewHolder {
 
         public int id;
+        View itemView;
         TextView startTime;
         TextView endTime;
         Switch enableSwitch;
@@ -162,6 +210,7 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
 
         TimeRowHolder(View itemView) {
             super(itemView);
+            this.itemView = itemView;
             id = -1;
             startTime = itemView.findViewById(R.id.start_time);
             endTime = itemView.findViewById(R.id.end_time);
