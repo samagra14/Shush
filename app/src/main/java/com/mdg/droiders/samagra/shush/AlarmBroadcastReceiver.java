@@ -14,6 +14,9 @@ import com.mdg.droiders.samagra.shush.utils.RingerUtils;
  */
 
 public class AlarmBroadcastReceiver extends BroadcastReceiver {
+
+    private static final String LOG_TAG = "Samagra/BR/";
+
     @Override
     public void onReceive(Context context, Intent intent) {
         boolean shush = intent.getBooleanExtra(

@@ -19,6 +19,7 @@ import java.util.Locale;
  */
 public class AlarmScheduler {
 
+    private static final SimpleDateFormat LOG_DATE_FORMAT = new SimpleDateFormat("hh:mm a, EE ,dd MMM yyyy", Locale.ENGLISH);
     private static final int ONE_WEEK_IN_MILLIS = 7 * 24 * 60 * 60 * 1000;
     private static final String LOG_TAG = "Samagra/AS/";
 
@@ -31,9 +32,9 @@ public class AlarmScheduler {
     }
 
     /**
-     * Sets a weekly alarm to silence your phone.
+     * Sets a weekly alarm to silence your phone for every day.
      * <br><br>
-     * <b>Uses</b> : {@link #setAlarm(long, long, Integer)} to set each alarm one by one.
+     * <b>Uses</b> : {@link #setAlarm(long, long, Integer, Integer)} to set each alarm one by one.
      *
      * @param startTime The time of day at which phone is to be shushed
      * @param endTime   The time of day at which phone is to be un-shushed
@@ -54,8 +55,7 @@ public class AlarmScheduler {
         endTime.set(Calendar.YEAR, rightNow.get(Calendar.YEAR));
         endTime.set(Calendar.MONTH, rightNow.get(Calendar.MONTH));
         endTime.set(Calendar.DAY_OF_MONTH, rightNow.get(Calendar.DAY_OF_MONTH));
-        SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a, EE ,dd MMM yyyy", Locale.ENGLISH);
-        Log.d(LOG_TAG + "now", sdf.format(rightNow.getTime()));
+        Log.d(LOG_TAG + "now", LOG_DATE_FORMAT.format(rightNow.getTime()));
 
         if (startTime.get(Calendar.HOUR_OF_DAY)
                 > endTime.get(Calendar.HOUR_OF_DAY)) {
@@ -69,10 +69,10 @@ public class AlarmScheduler {
             }
             Log.d(LOG_TAG + "I-Val", String.valueOf(j));
             if (days[j]) {
-                int dayID = getDayID(j, rowID);
                 setAlarm(startTime.getTimeInMillis(),
                         endTime.getTimeInMillis(),
-                        dayID);
+                        getStartDayID(j, rowID),
+                        getEndDayID(j, rowID));
             }
         }
         for (int j = 0; j < i; j++) {
@@ -80,16 +80,16 @@ public class AlarmScheduler {
             endTime.add(Calendar.DAY_OF_MONTH, 1);
             Log.d(LOG_TAG + "I-Val", String.valueOf(j));
             if (days[j]) {
-                int dayID = getDayID(j, rowID);
                 setAlarm(startTime.getTimeInMillis(),
                         endTime.getTimeInMillis(),
-                        dayID);
+                        getStartDayID(j, rowID),
+                        getEndDayID(j, rowID));
             }
         }
     }
 
     /**
-     * Sets a weekly alarm to silence your phone.
+     * Sets a weekly alarm to silence your phone for every day.
      * <br><br>
      * <b>Uses</b> : {@link #setWeeklyAlarm(Calendar, Calendar, boolean[], Integer)} to set weekly alarms.
      *
@@ -117,49 +117,51 @@ public class AlarmScheduler {
     }
 
     /**
-     * Set an alarm to silence the phone.
+     * Set a weekly repeating alarm to silence the phone.
      *
      * @param startTimeInMillis The time at which phone is to be shushed
      * @param endTimeInMillis   The time at which phone is to be un-shushed
      */
-    public void setAlarm(long startTimeInMillis, long endTimeInMillis, Integer alarmId) {
+    public void setAlarm(long startTimeInMillis, long endTimeInMillis, Integer startAlarmId, Integer endAlarmId) {
         if (startTimeInMillis >= endTimeInMillis) {
             return;
         }
-        if (alarmId == null) {
+        if (startAlarmId == null || endAlarmId == null) {
             return;
         }
-        SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a, EE ,dd MMM yyyy", Locale.ENGLISH);
-        Log.d(LOG_TAG + "start", sdf.format(new Date(startTimeInMillis)));
-        Log.d(LOG_TAG + "end", sdf.format(new Date(endTimeInMillis)));
+
+        Log.d(LOG_TAG + "start", LOG_DATE_FORMAT.format(new Date(startTimeInMillis)));
+        Log.d(LOG_TAG + "end", LOG_DATE_FORMAT.format(new Date(endTimeInMillis)));
         alarmManager.setRepeating(
                 AlarmManager.RTC_WAKEUP,
                 startTimeInMillis,
                 ONE_WEEK_IN_MILLIS,
-                getDefaultPendingIntent(true, alarmId)
+                getDefaultPendingIntent(true, startAlarmId)
         );
         alarmManager.setRepeating(
                 AlarmManager.RTC_WAKEUP,
                 endTimeInMillis,
                 ONE_WEEK_IN_MILLIS,
-                getDefaultPendingIntent(false, alarmId)
+                getDefaultPendingIntent(false, endAlarmId)
         );
     }
 
     /**
-     * Sets multiple alarms at once.
+     * Sets multiple weekly alarms at once.
      * <br><br>
-     * <b>Uses</b> : {@link #setAlarm(long, long, Integer)} to set each alarm one by one.
+     * <b>Uses</b> : {@link #setAlarm(long, long, Integer, Integer)} to set each alarm one by one.
      *
      * @param startTimesInMillis The list of start times at which phone is to be shushed
      * @param endTimesInMillis   The list of end times at which phone is to be un-shushed
      */
-    public void setAlarms(List<Long> startTimesInMillis, List<Long> endTimesInMillis, List<Integer> alarmIds) {
+    public void setAlarms(List<Long> startTimesInMillis, List<Long> endTimesInMillis,
+                          List<Integer> startAlarmIds, List<Integer> endAlarmIds) {
         if (startTimesInMillis.size() != endTimesInMillis.size()) {
             return;
         }
         for (int i = 0; i < startTimesInMillis.size(); i++) {
-            setAlarm(startTimesInMillis.get(i), endTimesInMillis.get(i), alarmIds.get(i));
+            setAlarm(startTimesInMillis.get(i), endTimesInMillis.get(i),
+                    startAlarmIds.get(i), endAlarmIds.get(i));
         }
     }
 
@@ -175,7 +177,7 @@ public class AlarmScheduler {
     }
 
     /**
-     * Get day ID for alarms that are scheduled by alarm manager.
+     * Get day ID for start alarms(shush types) that are scheduled by alarm manager.
      * The ID returned identifies a particular day of a particular shush alarm.
      *
      * @param day   int type for week days starting from monday and zero indexed.
@@ -183,8 +185,21 @@ public class AlarmScheduler {
      * @param rowID Unique primary key of the shush alarm row.
      * @return The ID used by {@link AlarmManager} to schedule weekly alarms
      */
-    private int getDayID(int day, int rowID) {
+    private int getStartDayID(int day, int rowID) {
         return rowID + (day + 1) * 10000;
+    }
+
+    /**
+     * Get day ID for end alarms(un-shush types) that are scheduled by alarm manager.
+     * The ID returned identifies a particular day of a particular shush alarm.
+     *
+     * @param day   int type for week days starting from monday and zero indexed.
+     *              For e.g. - Monday is 0, Tuesday is 1, ... and so on
+     * @param rowID Unique primary key of the shush alarm row.
+     * @return The ID used by {@link AlarmManager} to schedule weekly alarms
+     */
+    private int getEndDayID(int day, int rowID) {
+        return rowID + (day + 1) * 1000;
     }
 
     /**

@@ -21,7 +21,7 @@ public class RingerUtils {
     public static void setRingerMode(Context context, int mode){
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
-        if (Build.VERSION.SDK_INT<24 || (Build.VERSION.SDK_INT>=24 && !notificationManager.isNotificationPolicyAccessGranted())){
+        if (Build.VERSION.SDK_INT<24 || (Build.VERSION.SDK_INT>=24 && notificationManager.isNotificationPolicyAccessGranted())){
             AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
             audioManager.setRingerMode(mode);
         }
