@@ -1,4 +1,4 @@
-package com.mdg.droiders.samagra.shush;
+package com.mdg.droiders.samagra.shush.activities;
 
 import android.Manifest;
 import android.app.NotificationManager;
@@ -38,6 +38,9 @@ import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceBuffer;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.location.places.ui.PlacePicker;
+import com.mdg.droiders.samagra.shush.Geofencing;
+import com.mdg.droiders.samagra.shush.R;
+import com.mdg.droiders.samagra.shush.adapters.PlaceListAdapter;
 import com.mdg.droiders.samagra.shush.data.PlacesContract;
 
 import java.util.ArrayList;

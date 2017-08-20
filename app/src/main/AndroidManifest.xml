@@ -17,7 +17,7 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/your_google_places_api_key" />
 
-        <activity android:name=".MainActivity">
+        <activity android:name=".activities.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -31,12 +31,12 @@
             android:exported="false" />
 
         <receiver
-            android:name=".GeofenceBroadcastReceiver"
+            android:name=".receivers.GeofenceBroadcastReceiver"
             android:enabled="true"
             android:exported="true" />
-        <receiver android:name=".AlarmBroadcastReceiver" />
+        <receiver android:name=".receivers.AlarmBroadcastReceiver" />
 
-        <activity android:name=".TimeListActivity"
+        <activity android:name=".activities.TimeListActivity"
             android:screenOrientation="portrait"/>
     </application>
 

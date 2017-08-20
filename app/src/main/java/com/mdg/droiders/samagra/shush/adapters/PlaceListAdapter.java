@@ -1,4 +1,4 @@
-package com.mdg.droiders.samagra.shush;
+package com.mdg.droiders.samagra.shush.adapters;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.google.android.gms.location.places.PlaceBuffer;
+import com.mdg.droiders.samagra.shush.R;
 
 /**
  * Created by samagra on 20/7/17.

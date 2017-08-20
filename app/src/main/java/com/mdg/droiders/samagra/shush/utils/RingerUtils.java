@@ -10,7 +10,7 @@ import android.media.AudioManager;
 import android.os.Build;
 import android.support.v4.app.NotificationCompat;
 
-import com.mdg.droiders.samagra.shush.MainActivity;
+import com.mdg.droiders.samagra.shush.activities.MainActivity;
 import com.mdg.droiders.samagra.shush.R;
 
 /**

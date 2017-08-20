@@ -1,4 +1,4 @@
-package com.mdg.droiders.samagra.shush;
+package com.mdg.droiders.samagra.shush.receivers;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

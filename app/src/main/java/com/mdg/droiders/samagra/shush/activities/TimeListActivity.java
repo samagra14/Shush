@@ -1,4 +1,4 @@
-package com.mdg.droiders.samagra.shush;
+package com.mdg.droiders.samagra.shush.activities;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -6,6 +6,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
+import com.mdg.droiders.samagra.shush.R;
 import com.mdg.droiders.samagra.shush.adapters.TimeListAdapter;
 
 public class TimeListActivity extends AppCompatActivity {
