@@ -22,7 +22,8 @@ import java.util.Locale;
 public class AlarmScheduler {
 
     private static final SimpleDateFormat LOG_DATE_FORMAT = new SimpleDateFormat("hh:mm a, EE ,dd MMM yyyy", Locale.ENGLISH);
-    private static final int ONE_WEEK_IN_MILLIS = 7 * 24 * 60 * 60 * 1000;
+    private static final int START_ALARM_ID_INCREMENTER = 10000;
+    private static final int END_ALARM_ID_INCREMENTER = 1000;
     private static final String LOG_TAG = "Samagra/AS/";
 
     private AlarmManager alarmManager;
@@ -46,11 +47,15 @@ public class AlarmScheduler {
      * @param rowID     Unique primary key of the shush alarm row.
      */
     public void setWeeklyAlarm(Calendar startTime, Calendar endTime, boolean[] days, Integer rowID) {
+        // To avoid various exceptions
         if (rowID == null || days.length != 7) {
             return;
         }
+        // Instance of calendar that holds current system time
         Calendar rightNow = Calendar.getInstance();
 
+        // Set YEAR, MONTH and DAY fields of startTime
+        // and endTime to today's YEAR, MONTH and DAY respectively
         startTime.set(Calendar.YEAR, rightNow.get(Calendar.YEAR));
         startTime.set(Calendar.MONTH, rightNow.get(Calendar.MONTH));
         startTime.set(Calendar.DAY_OF_MONTH, rightNow.get(Calendar.DAY_OF_MONTH));
@@ -59,10 +64,20 @@ public class AlarmScheduler {
         endTime.set(Calendar.DAY_OF_MONTH, rightNow.get(Calendar.DAY_OF_MONTH));
         Log.d(LOG_TAG + "now", LOG_DATE_FORMAT.format(rightNow.getTime()));
 
+        // If startTime's hour is ahead of endTime's, assume that
+        // endTime is of that of next day
         if (startTime.get(Calendar.HOUR_OF_DAY)
                 > endTime.get(Calendar.HOUR_OF_DAY)) {
             endTime.add(Calendar.DAY_OF_MONTH, 1);
         }
+
+        // If endTime is in the past increment both start and end time
+        if (endTime.compareTo(rightNow) < 0) {
+            startTime.add(Calendar.DAY_OF_MONTH, 1);
+            endTime.add(Calendar.DAY_OF_MONTH, 1);
+        }
+
+        // get Day index of start Time
         int i = getDay(startTime);
         for (int j = i; j < 7; j++) {
             if (j != i) {
@@ -119,37 +134,58 @@ public class AlarmScheduler {
     }
 
     /**
-     * Set a weekly repeating alarm to silence the phone.
+     * Set an alarm to silence the phone.
+     * <br><br>
+     * <b>Uses</b> : {@link #setAlarm(long, Integer, boolean)} to set start alarm
+     * and the end alarm
      *
      * @param startTimeInMillis The time at which phone is to be shushed
      * @param endTimeInMillis   The time at which phone is to be un-shushed
+     * @param startAlarmID      The id that uniquely identifies the start time alarm
+     * @param endAlarmID        The id that uniquely identifies the end time alarm
      */
-    public void setAlarm(long startTimeInMillis, long endTimeInMillis, Integer startAlarmId, Integer endAlarmId) {
+    public void setAlarm(long startTimeInMillis, long endTimeInMillis, Integer startAlarmID, Integer endAlarmID) {
         if (startTimeInMillis >= endTimeInMillis) {
             return;
         }
-        if (startAlarmId == null || endAlarmId == null) {
+        if (startAlarmID == null || endAlarmID == null) {
+            return;
+        }
+        if (startAlarmID.equals(endAlarmID)) {
+            Log.e(LOG_TAG + "error", "start alarm id and end alarm ids are same");
             return;
         }
 
         Log.d(LOG_TAG + "start", LOG_DATE_FORMAT.format(new Date(startTimeInMillis)));
         Log.d(LOG_TAG + "end", LOG_DATE_FORMAT.format(new Date(endTimeInMillis)));
-        alarmManager.setRepeating(
+        setAlarm(startTimeInMillis, startAlarmID, true);
+        setAlarm(endTimeInMillis, endAlarmID, false);
+    }
+
+    /**
+     * Set an alarm to silence the phone.
+     *
+     * @param timeInMillis The time at which phone is to be shushed/un-shushed
+     * @param alarmID      The alarm id used when scheduling the alarm
+     * @param shush        A boolean indicating whether or not to
+     *                     silence the phone when the alarm is fired by the system.
+     *                     Silent mode will be activated if shouldShush is set to be true
+     * @see #setAlarm(long, long, Integer, Integer)
+     */
+    public void setAlarm(long timeInMillis, Integer alarmID, boolean shush) {
+        if (alarmID == null) {
+            return;
+        }
+
+        alarmManager.setExact(
                 AlarmManager.RTC_WAKEUP,
-                startTimeInMillis,
-                ONE_WEEK_IN_MILLIS,
-                getDefaultPendingIntent(true, startAlarmId)
-        );
-        alarmManager.setRepeating(
-                AlarmManager.RTC_WAKEUP,
-                endTimeInMillis,
-                ONE_WEEK_IN_MILLIS,
-                getDefaultPendingIntent(false, endAlarmId)
+                timeInMillis,
+                getDefaultPendingIntent(shush, timeInMillis, alarmID)
         );
     }
 
     /**
-     * Sets multiple weekly alarms at once.
+     * Sets multiple alarms at once.
      * <br><br>
      * <b>Uses</b> : {@link #setAlarm(long, long, Integer, Integer)} to set each alarm one by one.
      *
@@ -167,13 +203,50 @@ public class AlarmScheduler {
         }
     }
 
-    private PendingIntent getDefaultPendingIntent(boolean shouldShush, int alarmId) {
+    /**
+     * Get a default pending intent without any extras.
+     * <br> Used to cancel any existing alarm whose alarm id is known.
+     *
+     * @param alarmID The alarm id used when scheduling the alarm
+     * @return a pending intent that can be used to cancel
+     * any alarm which has same pending intent
+     * @see #getDefaultPendingIntent(boolean, long, int)
+     */
+    private PendingIntent getDefaultPendingIntent(int alarmID) {
         PendingIntent pendingIntent;
 
         Intent intent = new Intent(context, AlarmBroadcastReceiver.class);
-        intent.putExtra(context.getString(R.string.alarm_intent_extra_key), shouldShush);
         pendingIntent = PendingIntent.getBroadcast(
-                context, alarmId, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+                context, alarmID, intent, PendingIntent.FLAG_UPDATE_CURRENT
+        );
+
+        return pendingIntent;
+    }
+
+    /**
+     * Get a complete pending intent with all the extra values.
+     * <br> Used to schedule an alarm for future.
+     *
+     * @param shouldShush  A boolean indicating whether or not to
+     *                     silence the phone when the alarm is fired by the system.
+     *                     Silent mode will be activated if shouldShush is set to be true
+     * @param timeInMillis The "timeInMillis" at which the alarm is expected to go off.
+     *                     It is used to schedule a future alarm for next week.
+     * @param alarmId      An int that uniquely identifies this alarm, so that the alarm
+     *                     may be updated/canceled in the future using the same.
+     * @return A pending intent used to schedule alarms by {@link #setAlarm(long, long, Integer, Integer)} method
+     * @see #getDefaultPendingIntent(int)
+     */
+    private PendingIntent getDefaultPendingIntent(boolean shouldShush, long timeInMillis, int alarmId) {
+        PendingIntent pendingIntent;
+
+        Intent intent = new Intent(context, AlarmBroadcastReceiver.class);
+        intent.putExtra(context.getString(R.string.alarm_intent_boolean_extra_key), shouldShush);
+        intent.putExtra(context.getString(R.string.alarm_intent_long_extra_key), timeInMillis);
+        intent.putExtra(context.getString(R.string.alarm_intent_int_extra_key), alarmId);
+        pendingIntent = PendingIntent.getBroadcast(
+                context, alarmId, intent, PendingIntent.FLAG_UPDATE_CURRENT
+        );
 
         return pendingIntent;
     }
@@ -188,7 +261,7 @@ public class AlarmScheduler {
      * @return The ID used by {@link AlarmManager} to schedule weekly alarms
      */
     private int getStartDayID(int day, int rowID) {
-        return rowID + (day + 1) * 10000;
+        return rowID + (day + 1) * START_ALARM_ID_INCREMENTER;
     }
 
     /**
@@ -201,7 +274,7 @@ public class AlarmScheduler {
      * @return The ID used by {@link AlarmManager} to schedule weekly alarms
      */
     private int getEndDayID(int day, int rowID) {
-        return rowID + (day + 1) * 1000;
+        return rowID + (day + 1) * END_ALARM_ID_INCREMENTER;
     }
 
     /**
