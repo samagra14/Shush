@@ -208,6 +208,8 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
         CheckBox saturday;
         CheckBox sunday;
 
+        TimePickerDialogFragment timePickerDialog;
+
         TimeRowHolder(View itemView) {
             super(itemView);
             this.itemView = itemView;
@@ -222,10 +224,10 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
             friday = itemView.findViewById(R.id.friday);
             saturday = itemView.findViewById(R.id.saturday);
             sunday = itemView.findViewById(R.id.sunday);
+            timePickerDialog = new TimePickerDialogFragment();
             View.OnClickListener timeChangeListener = new View.OnClickListener() {
                 @Override
                 public void onClick(final View view) {
-                    TimePickerDialogFragment timePickerDialog = new TimePickerDialogFragment();
                     timePickerDialog.setTimeSetCallback(new TimePickerDialogFragment.TimeSetCallback() {
                         @Override
                         public void onTimeSet(int hour, int minute) {
@@ -236,9 +238,18 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
                             refreshData(TimeRowHolder.this);
                         }
                     });
+                    Calendar displayedTime = Calendar.getInstance();
+                    try {
+                        displayedTime.setTime(
+                                DISPLAY_DATE_FORMAT.parse(((TextView) view).getText().toString()));
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+                    timePickerDialog.setTime(displayedTime);
                     timePickerDialog.show(
                             ((AppCompatActivity) mContext).getSupportFragmentManager(),
-                            DIALOG_TIME_TAG);
+                            DIALOG_TIME_TAG
+                    );
                 }
             };
             CompoundButton.OnCheckedChangeListener dayCheckChangeListener

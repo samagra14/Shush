@@ -1,9 +1,9 @@
 package com.mdg.droiders.samagra.shush.fragments;
 
 import android.app.Dialog;
-
 import android.app.TimePickerDialog;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.text.format.DateFormat;
 import android.widget.TimePicker;
@@ -22,17 +22,25 @@ public class TimePickerDialogFragment extends DialogFragment
         void onTimeSet(int hour, int minute);
     }
 
-    TimeSetCallback mCallback;
+    private TimeSetCallback mCallback;
+    private Integer hourOfDay;
+    private Integer minutes;
 
+    @NonNull
     @Override
-
     public Dialog onCreateDialog(Bundle savedInstanceState) {
 
         Calendar rightNow = Calendar.getInstance();
+        if (hourOfDay == null) {
+            hourOfDay = rightNow.get(Calendar.HOUR_OF_DAY);
+        }
+        if (minutes == null) {
+            minutes = rightNow.get(Calendar.MINUTE);
+        }
 
         return new TimePickerDialog(getActivity(), this,
-                rightNow.get(Calendar.HOUR_OF_DAY),
-                rightNow.get(Calendar.MINUTE),
+                hourOfDay,
+                minutes,
                 DateFormat.is24HourFormat(getActivity()));
     }
 
@@ -46,4 +54,10 @@ public class TimePickerDialogFragment extends DialogFragment
     public void setTimeSetCallback(TimeSetCallback mCallback) {
         this.mCallback = mCallback;
     }
+
+    public void setTime(Calendar displayTime) {
+        hourOfDay = displayTime.get(Calendar.HOUR_OF_DAY);
+        minutes = displayTime.get(Calendar.MINUTE);
+    }
+
 }
