@@ -21,7 +21,8 @@ import java.util.Locale;
  */
 public class AlarmScheduler {
 
-    private static final SimpleDateFormat LOG_DATE_FORMAT = new SimpleDateFormat("hh:mm a, EE ,dd MMM yyyy", Locale.ENGLISH);
+    private static final SimpleDateFormat LOG_DATE_FORMAT
+            = new SimpleDateFormat("hh:mm a, EE ,dd MMM yyyy", Locale.ENGLISH);
     private static final int START_ALARM_ID_INCREMENTER = 10000;
     private static final int END_ALARM_ID_INCREMENTER = 1000;
     private static final String LOG_TAG = "Samagra/AS/";
@@ -35,7 +36,46 @@ public class AlarmScheduler {
     }
 
     /**
-     * Sets a weekly alarm to silence your phone for every day.
+     * Sets an alarm to shush the phone for a single day.
+     *
+     * @param startTime The time at which phone is to be shushed
+     * @param endTime   The time at which phone is to be un-shushed
+     * @param day       int type for week days starting from monday and zero indexed.
+     *                  For e.g. - Monday is 0, Tuesday is 1, ... and so on
+     * @param rowID     Unique primary key of the shush alarm row.
+     */
+    public void setSingleDayAlarm(Calendar startTime, Calendar endTime, int day, Integer rowID) {
+        if (day > 6 || rowID == null) {
+            return;
+        }
+        boolean[] days = new boolean[7];
+        for (int i = 0; i < 7; i++) {
+            days[i] = day == i;
+        }
+        setWeeklyAlarm(startTime, endTime, days, rowID);
+    }
+
+    /**
+     * Cancels a shush alarm for a particular day if it exists.
+     *
+     * @param day   int type for week days starting from monday and zero indexed.
+     *              For e.g. - Monday is 0, Tuesday is 1, ... and so on
+     * @param rowID Unique primary key of the shush alarm row.
+     */
+    public void cancelSingleAlarm(int day, Integer rowID) {
+        if (rowID == null) {
+            return;
+        }
+        alarmManager.cancel(getDefaultPendingIntent(getStartDayID(day, rowID)));
+        alarmManager.cancel(getDefaultPendingIntent(getEndDayID(day, rowID)));
+    }
+
+    /**
+     * Sets a weekly alarm to silence your phone for days given by boolean array days.
+     * <br>
+     * <b>NOTE</b> : This method only schedules alarms and does NOT cancels for some day whose
+     * corresponding index in days array is false. To cancel alarms
+     * use {@link #cancelSingleAlarm(int, Integer)}
      * <br><br>
      * <b>Uses</b> : {@link #setAlarm(long, long, Integer, Integer)} to set each alarm one by one.
      *
@@ -80,10 +120,6 @@ public class AlarmScheduler {
         // get Day index of start Time
         int i = getDay(startTime);
         for (int j = i; j < 7; j++) {
-            if (j != i) {
-                startTime.add(Calendar.DAY_OF_MONTH, 1);
-                endTime.add(Calendar.DAY_OF_MONTH, 1);
-            }
             Log.d(LOG_TAG + "I-Val", String.valueOf(j));
             if (days[j]) {
                 setAlarm(startTime.getTimeInMillis(),
@@ -91,6 +127,9 @@ public class AlarmScheduler {
                         getStartDayID(j, rowID),
                         getEndDayID(j, rowID));
             }
+            // Update startTime and endTime
+            startTime.add(Calendar.DAY_OF_MONTH, 1);
+            endTime.add(Calendar.DAY_OF_MONTH, 1);
         }
         for (int j = 0; j < i; j++) {
             startTime.add(Calendar.DAY_OF_MONTH, 1);

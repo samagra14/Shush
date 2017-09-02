@@ -31,6 +31,7 @@ import java.util.Locale;
 public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRowHolder> {
 
     private static final String DIALOG_TIME_TAG = "time_picker_dialog_tag";
+    // The format which is used to display date in each row
     private static final SimpleDateFormat DISPLAY_DATE_FORMAT =
             new SimpleDateFormat("hh:mm a", Locale.ENGLISH);
     private static final String LOG_TAG = "Samagra/TLA/";
@@ -58,8 +59,12 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
             holder.itemView.setVisibility(View.INVISIBLE);
             return;
         }
+        // isBound set to false so that listeners do not react to set events in this method.
+        holder.isBound = false;
         holder.itemView.setVisibility(View.VISIBLE);
         if (timeDataCursor.moveToPosition(position)) {
+
+            // Retrieving the whole row from the database.
             int id = timeDataCursor.getInt(
                     timeDataCursor.getColumnIndexOrThrow(PlacesContract.TimeEntry._ID)
             );
@@ -90,6 +95,7 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
             int sunday = timeDataCursor.getInt(
                     timeDataCursor.getColumnIndexOrThrow(PlacesContract.TimeEntry.COLUMN_SUNDAY)
             );
+            // Updating the holder
             holder.id = id;
             holder.startTime.setText(startTime);
             holder.endTime.setText(endTime);
@@ -100,15 +106,22 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
             holder.friday.setChecked(friday == 1);
             holder.saturday.setChecked(saturday == 1);
             holder.sunday.setChecked(sunday == 1);
+
+            // All the set events have occurred, now we can again start listening.
+            holder.isBound = true;
         }
 
     }
 
     @Override
     public int getItemCount() {
+        // An extra item is to make space for the fab
         return timeDataCursor.getCount() + 1;
     }
 
+    /**
+     * Adds a new row in the recycler as well as in the db with some default values.
+     */
     public void addItem() {
         Calendar calendar = Calendar.getInstance();
         ContentValues values = new ContentValues();
@@ -132,11 +145,23 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
         notifyItemInserted(timeDataCursor.getCount() - 1);
     }
 
+    /**
+     * Make a query to the database to get the updated result in the local cursor instance.
+     */
+    public void refreshCursor() {
+        timeDataCursor = mContext.getContentResolver().query(
+                PlacesContract.TimeEntry.CONTENT_URI, null, null, null, null);
+    }
+
+    /**
+     * Close the cursor to release its resources.
+     * The cursor should be closed in onStop() and refreshed in onResume().
+     */
     public void closeCursor() {
         timeDataCursor.close();
     }
 
-    private boolean refreshData(TimeRowHolder holder) {
+    /*private boolean refreshData(TimeRowHolder holder) {
 
         ContentValues values = new ContentValues();
         String startTimeString = holder.startTime.getText().toString();
@@ -174,11 +199,122 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
         refreshCursor();
         alarmScheduler.setWeeklyAlarm(startTime, endTime, getDayArr(holder), holder.id);
         return affectedRows == 1;
+    }*/
+
+    /**
+     * Updates db and reschedules alarm if startTime or endTime changes.
+     *
+     * @param holder The holder instance that is currently bound to the row whose
+     *               time is changed.
+     */
+    private void notifyTimeChanged(TimeRowHolder holder) {
+        ContentValues values = new ContentValues();
+        String startTimeString = holder.startTime.getText().toString();
+        String endTimeString = holder.endTime.getText().toString();
+        values.put(PlacesContract.TimeEntry.COLUMN_START_TIME, startTimeString);
+        values.put(PlacesContract.TimeEntry.COLUMN_END_TIME, endTimeString);
+
+        mContext.getContentResolver().update(
+                Uri.withAppendedPath(PlacesContract.TimeEntry.CONTENT_URI, String.valueOf(holder.id))
+                , values, null, null
+        );
+
+        Calendar startTime = Calendar.getInstance();
+        Calendar endTime = Calendar.getInstance();
+        setTimesFromHolder(holder, startTime, endTime);
+        closeCursor();
+        refreshCursor();
+        alarmScheduler.setWeeklyAlarm(startTime, endTime, getDayArr(holder), holder.id);
     }
 
-    public void refreshCursor() {
-        timeDataCursor = mContext.getContentResolver().query(
-                PlacesContract.TimeEntry.CONTENT_URI, null, null, null, null);
+    /**
+     * Updates db and sets alarm for the corresponding day.
+     *
+     * @param holder The holder instance that is currently bound to the row whose
+     *               alarm is set.
+     * @param day    The day for which alarm is set. The day is zero indexed and starts from monday.
+     */
+    private void notifyDayAlarmSet(TimeRowHolder holder, int day) {
+
+        ContentValues values = new ContentValues();
+        values.put(getColumnFromDay(day), true);
+        mContext.getContentResolver().update(
+                Uri.withAppendedPath(PlacesContract.TimeEntry.CONTENT_URI, String.valueOf(holder.id))
+                , values, null, null
+        );
+
+        Calendar startTime = Calendar.getInstance();
+        Calendar endTime = Calendar.getInstance();
+        setTimesFromHolder(holder, startTime, endTime);
+        alarmScheduler.setSingleDayAlarm(startTime, endTime, day, holder.id);
+    }
+
+    /**
+     * Updates db and cancels alarm for the corresponding day.
+     *
+     * @param holder The holder instance that is currently bound to the row whose
+     *               alarm is cancelled.
+     * @param day    The day for which alarm is cancelled. The day is zero indexed and starts from monday.
+     */
+    private void notifyDayAlarmCancelled(TimeRowHolder holder, int day) {
+
+        ContentValues values = new ContentValues();
+        values.put(getColumnFromDay(day), false);
+        mContext.getContentResolver().update(
+                Uri.withAppendedPath(PlacesContract.TimeEntry.CONTENT_URI, String.valueOf(holder.id))
+                , values, null, null
+        );
+
+        Calendar startTime = Calendar.getInstance();
+        Calendar endTime = Calendar.getInstance();
+        setTimesFromHolder(holder, startTime, endTime);
+        alarmScheduler.cancelSingleAlarm(day, holder.id);
+    }
+
+    /**
+     * Returns the corresponding column of the day in db.
+     *
+     * @param day The day for which the column is to be returned
+     * @return The column corresponding to the given day
+     */
+    private String getColumnFromDay(int day) {
+        switch (day) {
+            case 0: {
+                return PlacesContract.TimeEntry.COLUMN_MONDAY;
+            }
+            case 1: {
+                return PlacesContract.TimeEntry.COLUMN_TUESDAY;
+            }
+            case 2: {
+                return PlacesContract.TimeEntry.COLUMN_WEDNESDAY;
+            }
+            case 3: {
+                return PlacesContract.TimeEntry.COLUMN_THURSDAY;
+            }
+            case 4: {
+                return PlacesContract.TimeEntry.COLUMN_FRIDAY;
+            }
+            case 5: {
+                return PlacesContract.TimeEntry.COLUMN_SATURDAY;
+            }
+            case 6: {
+                return PlacesContract.TimeEntry.COLUMN_SUNDAY;
+            }
+            default: {
+                return null;
+            }
+        }
+    }
+
+    private void setTimesFromHolder(TimeRowHolder holder, Calendar startTime, Calendar endTime) {
+        String startTimeString = holder.startTime.getText().toString();
+        String endTimeString = holder.endTime.getText().toString();
+        try {
+            startTime.setTime(DISPLAY_DATE_FORMAT.parse(startTimeString));
+            endTime.setTime(DISPLAY_DATE_FORMAT.parse(endTimeString));
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
     }
 
     private boolean[] getDayArr(TimeRowHolder holder) {
@@ -208,6 +344,12 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
         CheckBox saturday;
         CheckBox sunday;
 
+        /**
+         * Listeners attached to the holder will only react to events
+         * if the a view is bound to the current holder.
+         */
+        boolean isBound;
+
         TimePickerDialogFragment timePickerDialog;
 
         TimeRowHolder(View itemView) {
@@ -228,6 +370,9 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
             View.OnClickListener timeChangeListener = new View.OnClickListener() {
                 @Override
                 public void onClick(final View view) {
+                    if (!isBound) {
+                        return;
+                    }
                     timePickerDialog.setTimeSetCallback(new TimePickerDialogFragment.TimeSetCallback() {
                         @Override
                         public void onTimeSet(int hour, int minute) {
@@ -235,7 +380,7 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
                             calendar.set(Calendar.HOUR_OF_DAY, hour);
                             calendar.set(Calendar.MINUTE, minute);
                             ((TextView) view).setText(DISPLAY_DATE_FORMAT.format(calendar.getTime()));
-                            refreshData(TimeRowHolder.this);
+                            notifyTimeChanged(TimeRowHolder.this);
                         }
                     });
                     Calendar displayedTime = Calendar.getInstance();
@@ -252,22 +397,99 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
                     );
                 }
             };
-            CompoundButton.OnCheckedChangeListener dayCheckChangeListener
-                    = new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                    refreshData(TimeRowHolder.this);
-                }
-            };
             startTime.setOnClickListener(timeChangeListener);
             endTime.setOnClickListener(timeChangeListener);
-            monday.setOnCheckedChangeListener(dayCheckChangeListener);
-            tuesday.setOnCheckedChangeListener(dayCheckChangeListener);
-            wednesday.setOnCheckedChangeListener(dayCheckChangeListener);
-            thursday.setOnCheckedChangeListener(dayCheckChangeListener);
-            friday.setOnCheckedChangeListener(dayCheckChangeListener);
-            saturday.setOnCheckedChangeListener(dayCheckChangeListener);
-            sunday.setOnCheckedChangeListener(dayCheckChangeListener);
+            monday.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
+                    if (!isBound) {
+                        return;
+                    }
+                    if (checked) {
+                        notifyDayAlarmSet(TimeRowHolder.this, 0);
+                    } else {
+                        notifyDayAlarmCancelled(TimeRowHolder.this, 0);
+                    }
+                }
+            });
+            tuesday.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
+                    if (!isBound) {
+                        return;
+                    }
+                    if (checked) {
+                        notifyDayAlarmSet(TimeRowHolder.this, 1);
+                    } else {
+                        notifyDayAlarmCancelled(TimeRowHolder.this, 1);
+                    }
+                }
+            });
+            wednesday.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
+                    if (!isBound) {
+                        return;
+                    }
+                    if (checked) {
+                        notifyDayAlarmSet(TimeRowHolder.this, 2);
+                    } else {
+                        notifyDayAlarmCancelled(TimeRowHolder.this, 2);
+                    }
+                }
+            });
+            thursday.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
+                    if (!isBound) {
+                        return;
+                    }
+                    if (checked) {
+                        notifyDayAlarmSet(TimeRowHolder.this, 3);
+                    } else {
+                        notifyDayAlarmCancelled(TimeRowHolder.this, 3);
+                    }
+                }
+            });
+            friday.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
+                    if (!isBound) {
+                        return;
+                    }
+                    if (checked) {
+                        notifyDayAlarmSet(TimeRowHolder.this, 4);
+                    } else {
+                        notifyDayAlarmCancelled(TimeRowHolder.this, 4);
+                    }
+                }
+            });
+            saturday.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
+                    if (!isBound) {
+                        return;
+                    }
+                    if (checked) {
+                        notifyDayAlarmSet(TimeRowHolder.this, 5);
+                    } else {
+                        notifyDayAlarmCancelled(TimeRowHolder.this, 5);
+                    }
+                }
+            });
+            sunday.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
+                    if (!isBound) {
+                        return;
+                    }
+                    if (checked) {
+                        notifyDayAlarmSet(TimeRowHolder.this, 6);
+                    } else {
+                        notifyDayAlarmCancelled(TimeRowHolder.this, 6);
+                    }
+                }
+            });
         }
     }
 }
