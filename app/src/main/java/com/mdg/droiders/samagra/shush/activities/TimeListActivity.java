@@ -14,14 +14,13 @@ public class TimeListActivity extends AppCompatActivity {
 
     private RecyclerView timeRecycler;
     private TimeListAdapter timeListAdapter;
-    private boolean isActivityCreated;
+    private boolean isCursorRefreshed;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_time_list);
         setUpActionBar();
-        isActivityCreated = true;
         timeRecycler = findViewById(R.id.time_list_recycler);
         findViewById(R.id.fab).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -32,6 +31,8 @@ public class TimeListActivity extends AppCompatActivity {
             }
         });
         timeListAdapter = new TimeListAdapter(this);
+        // Cursor is refreshed in the constructor
+        isCursorRefreshed = true;
         timeRecycler.setLayoutManager(new LinearLayoutManager(this));
         timeRecycler.setAdapter(timeListAdapter);
     }
@@ -39,17 +40,16 @@ public class TimeListActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (!isActivityCreated) {
+        if (!isCursorRefreshed) {
             timeListAdapter.refreshCursor();
         }
-        isActivityCreated = false;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        switch (id){
-            case android.R.id.home : {
+        switch (id) {
+            case android.R.id.home: {
                 finish();
                 return true;
             }
@@ -58,13 +58,14 @@ public class TimeListActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    protected void onStop() {
+        super.onStop();
         timeListAdapter.closeCursor();
+        isCursorRefreshed = false;
     }
 
-    private void setUpActionBar(){
-        if (getSupportActionBar() != null){
+    private void setUpActionBar() {
+        if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
     }
