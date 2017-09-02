@@ -1,5 +1,6 @@
 package com.mdg.droiders.samagra.shush.utils;
 
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.TaskStackBuilder;
@@ -10,8 +11,8 @@ import android.media.AudioManager;
 import android.os.Build;
 import android.support.v4.app.NotificationCompat;
 
-import com.mdg.droiders.samagra.shush.activities.MainActivity;
 import com.mdg.droiders.samagra.shush.R;
+import com.mdg.droiders.samagra.shush.activities.MainActivity;
 
 /**
  * Created by rohan on 13/8/17.
@@ -26,10 +27,10 @@ public class RingerUtils {
      * @param mode    The desired mode to switch device to, can be AudioManager.RINGER_MODE_SILENT or
      *                AudioManager.RINGER_MODE_NORMAL
      */
-    public static void setRingerMode(Context context, int mode){
+    public static void setRingerMode(Context context, int mode) {
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
-        if (Build.VERSION.SDK_INT<24 || (Build.VERSION.SDK_INT>=24 && notificationManager.isNotificationPolicyAccessGranted())){
+        if (Build.VERSION.SDK_INT < 24 || (Build.VERSION.SDK_INT >= 24 && notificationManager.isNotificationPolicyAccessGranted())) {
             AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
             audioManager.setRingerMode(mode);
         }
@@ -83,6 +84,9 @@ public class RingerUtils {
 
         //Auto remove the notification if the user touches it
         builder.setAutoCancel(true);
+
+        // Notification will be shown with light, vibration and default sound.
+        builder.setDefaults(Notification.DEFAULT_ALL);
 
         NotificationManager notificationManager = (NotificationManager)
                 context.getSystemService(Context.NOTIFICATION_SERVICE);
