@@ -82,8 +82,9 @@ public class AlarmScheduler {
      * @param startTime The time of day at which phone is to be shushed
      * @param endTime   The time of day at which phone is to be un-shushed
      * @param days      A boolean array that is true if the alarm is to be
-     *                  scheduled for the corresponding day. i.e. days[0] is set to be true
-     *                  then a weekly alarm will be set such that it will shush the phone every Monday.
+     *                  scheduled for the corresponding day. i.e. days[0] is
+     *                  set to be true then a weekly alarm will be set such
+     *                  that it will shush the phone every Monday.
      * @param rowID     Unique primary key of the shush alarm row.
      */
     public void setWeeklyAlarm(Calendar startTime, Calendar endTime, boolean[] days, Integer rowID) {
@@ -92,17 +93,17 @@ public class AlarmScheduler {
             return;
         }
         // Instance of calendar that holds current system time
-        Calendar rightNow = Calendar.getInstance();
+        Calendar currentTime = Calendar.getInstance();
 
         // Set YEAR, MONTH and DAY fields of startTime
         // and endTime to today's YEAR, MONTH and DAY respectively
-        startTime.set(Calendar.YEAR, rightNow.get(Calendar.YEAR));
-        startTime.set(Calendar.MONTH, rightNow.get(Calendar.MONTH));
-        startTime.set(Calendar.DAY_OF_MONTH, rightNow.get(Calendar.DAY_OF_MONTH));
-        endTime.set(Calendar.YEAR, rightNow.get(Calendar.YEAR));
-        endTime.set(Calendar.MONTH, rightNow.get(Calendar.MONTH));
-        endTime.set(Calendar.DAY_OF_MONTH, rightNow.get(Calendar.DAY_OF_MONTH));
-        Log.d(LOG_TAG + "now", LOG_DATE_FORMAT.format(rightNow.getTime()));
+        startTime.set(Calendar.YEAR, currentTime.get(Calendar.YEAR));
+        startTime.set(Calendar.MONTH, currentTime.get(Calendar.MONTH));
+        startTime.set(Calendar.DAY_OF_MONTH, currentTime.get(Calendar.DAY_OF_MONTH));
+        endTime.set(Calendar.YEAR, currentTime.get(Calendar.YEAR));
+        endTime.set(Calendar.MONTH, currentTime.get(Calendar.MONTH));
+        endTime.set(Calendar.DAY_OF_MONTH, currentTime.get(Calendar.DAY_OF_MONTH));
+        Log.d(LOG_TAG + "now", LOG_DATE_FORMAT.format(currentTime.getTime()));
 
         // If startTime's hour is ahead of endTime's, assume that
         // endTime is of that of next day
@@ -112,42 +113,33 @@ public class AlarmScheduler {
         }
 
         // If endTime is in the past increment both start and end time
-        if (endTime.compareTo(rightNow) < 0) {
+        if (endTime.compareTo(currentTime) < 0) {
             startTime.add(Calendar.DAY_OF_MONTH, 1);
             endTime.add(Calendar.DAY_OF_MONTH, 1);
         }
 
         // get Day index of start Time
         int i = getDay(startTime);
-        for (int j = i; j < 7; j++) {
-            Log.d(LOG_TAG + "I-Val", String.valueOf(j));
-            if (days[j]) {
+        for (int j = i; j < 7 + i; j++) {
+            int day = j % 7;
+            Log.d(LOG_TAG + "Day-Val", String.valueOf(day));
+            if (days[day]) {
                 setAlarm(startTime.getTimeInMillis(),
                         endTime.getTimeInMillis(),
-                        getStartDayID(j, rowID),
-                        getEndDayID(j, rowID));
+                        getStartDayID(day, rowID),
+                        getEndDayID(day, rowID));
             }
             // Update startTime and endTime
             startTime.add(Calendar.DAY_OF_MONTH, 1);
             endTime.add(Calendar.DAY_OF_MONTH, 1);
-        }
-        for (int j = 0; j < i; j++) {
-            startTime.add(Calendar.DAY_OF_MONTH, 1);
-            endTime.add(Calendar.DAY_OF_MONTH, 1);
-            Log.d(LOG_TAG + "I-Val", String.valueOf(j));
-            if (days[j]) {
-                setAlarm(startTime.getTimeInMillis(),
-                        endTime.getTimeInMillis(),
-                        getStartDayID(j, rowID),
-                        getEndDayID(j, rowID));
-            }
         }
     }
 
     /**
      * Sets a weekly alarm to silence your phone for every day.
      * <br><br>
-     * <b>Uses</b> : {@link #setWeeklyAlarm(Calendar, Calendar, boolean[], Integer)} to set weekly alarms.
+     * <b>Uses</b> : {@link #setWeeklyAlarm(Calendar, Calendar, boolean[], Integer)}
+     * to set weekly alarms.
      *
      * @param startHour    The hour at which phone is to be shushed in 24 hour format
      * @param startMinutes The minute at which phone is to be shushed
@@ -155,7 +147,8 @@ public class AlarmScheduler {
      * @param endMinutes   The minute at which phone is to be un-shushed
      * @param days         A boolean array that is true if the alarm is to be
      *                     scheduled for the corresponding day. i.e. days[0] is set to be true
-     *                     then a weekly alarm will be set such that it will shush the phone every Monday.
+     *                     then a weekly alarm will be set such that it will shush
+     *                     the phone every Monday.
      * @param rowID        Unique primary key of the shush alarm row.
      */
     public void setWeeklyAlarm(int startHour, int startMinutes, int endHour,
@@ -183,7 +176,8 @@ public class AlarmScheduler {
      * @param startAlarmID      The id that uniquely identifies the start time alarm
      * @param endAlarmID        The id that uniquely identifies the end time alarm
      */
-    public void setAlarm(long startTimeInMillis, long endTimeInMillis, Integer startAlarmID, Integer endAlarmID) {
+    public void setAlarm(long startTimeInMillis, long endTimeInMillis,
+                         Integer startAlarmID, Integer endAlarmID) {
         if (startTimeInMillis >= endTimeInMillis) {
             return;
         }
@@ -195,8 +189,8 @@ public class AlarmScheduler {
             return;
         }
 
-        Log.d(LOG_TAG + "start", LOG_DATE_FORMAT.format(new Date(startTimeInMillis)));
-        Log.d(LOG_TAG + "end", LOG_DATE_FORMAT.format(new Date(endTimeInMillis)));
+        Log.d(LOG_TAG + "startTime", LOG_DATE_FORMAT.format(new Date(startTimeInMillis)));
+        Log.d(LOG_TAG + "endTime", LOG_DATE_FORMAT.format(new Date(endTimeInMillis)));
         setAlarm(startTimeInMillis, startAlarmID, true);
         setAlarm(endTimeInMillis, endAlarmID, false);
     }
@@ -273,7 +267,8 @@ public class AlarmScheduler {
      *                     It is used to schedule a future alarm for next week.
      * @param alarmId      An int that uniquely identifies this alarm, so that the alarm
      *                     may be updated/canceled in the future using the same.
-     * @return A pending intent used to schedule alarms by {@link #setAlarm(long, long, Integer, Integer)} method
+     * @return A pending intent used to schedule alarms by
+     * {@link #setAlarm(long, long, Integer, Integer)} method
      * @see #getDefaultPendingIntent(int)
      */
     private PendingIntent getDefaultPendingIntent(boolean shouldShush, long timeInMillis, int alarmId) {

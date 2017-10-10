@@ -64,48 +64,22 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
         holder.itemView.setVisibility(View.VISIBLE);
         if (timeDataCursor.moveToPosition(position)) {
 
-            // Retrieving the whole row from the database.
-            int id = timeDataCursor.getInt(
+            // Retrieving the whole row from the database and Updating the holder
+            holder.id = timeDataCursor.getInt(
                     timeDataCursor.getColumnIndexOrThrow(PlacesContract.TimeEntry._ID)
             );
-            String startTime = timeDataCursor.getString(
+            holder.startTime.setText(timeDataCursor.getString(
                     timeDataCursor.getColumnIndexOrThrow(PlacesContract.TimeEntry.COLUMN_START_TIME)
-            );
-            String endTime = timeDataCursor.getString(
+            ));
+            holder.endTime.setText(timeDataCursor.getString(
                     timeDataCursor.getColumnIndexOrThrow(PlacesContract.TimeEntry.COLUMN_END_TIME)
-            );
-            int monday = timeDataCursor.getInt(
-                    timeDataCursor.getColumnIndexOrThrow(PlacesContract.TimeEntry.COLUMN_MONDAY)
-            );
-            int tuesday = timeDataCursor.getInt(
-                    timeDataCursor.getColumnIndexOrThrow(PlacesContract.TimeEntry.COLUMN_TUESDAY)
-            );
-            int wednesday = timeDataCursor.getInt(
-                    timeDataCursor.getColumnIndexOrThrow(PlacesContract.TimeEntry.COLUMN_WEDNESDAY)
-            );
-            int thursday = timeDataCursor.getInt(
-                    timeDataCursor.getColumnIndexOrThrow(PlacesContract.TimeEntry.COLUMN_THURSDAY)
-            );
-            int friday = timeDataCursor.getInt(
-                    timeDataCursor.getColumnIndexOrThrow(PlacesContract.TimeEntry.COLUMN_FRIDAY)
-            );
-            int saturday = timeDataCursor.getInt(
-                    timeDataCursor.getColumnIndexOrThrow(PlacesContract.TimeEntry.COLUMN_SATURDAY)
-            );
-            int sunday = timeDataCursor.getInt(
-                    timeDataCursor.getColumnIndexOrThrow(PlacesContract.TimeEntry.COLUMN_SUNDAY)
-            );
-            // Updating the holder
-            holder.id = id;
-            holder.startTime.setText(startTime);
-            holder.endTime.setText(endTime);
-            holder.monday.setChecked(monday == 1);
-            holder.tuesday.setChecked(tuesday == 1);
-            holder.wednesday.setChecked(wednesday == 1);
-            holder.thursday.setChecked(thursday == 1);
-            holder.friday.setChecked(friday == 1);
-            holder.saturday.setChecked(saturday == 1);
-            holder.sunday.setChecked(sunday == 1);
+            ));
+            for (int i = 0; i < 7; i++) {
+                int day = timeDataCursor.getInt(
+                        timeDataCursor.getColumnIndexOrThrow(getColumnFromDay(i))
+                );
+                holder.days[i].setChecked(day == 1);
+            }
 
             // All the set events have occurred, now we can again start listening.
             holder.isBound = true;
@@ -239,8 +213,9 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
         ContentValues values = new ContentValues();
         values.put(getColumnFromDay(day), true);
         mContext.getContentResolver().update(
-                Uri.withAppendedPath(PlacesContract.TimeEntry.CONTENT_URI, String.valueOf(holder.id))
-                , values, null, null
+                Uri.withAppendedPath(
+                        PlacesContract.TimeEntry.CONTENT_URI, String.valueOf(holder.id)
+                ), values, null, null
         );
 
         Calendar startTime = Calendar.getInstance();
@@ -254,7 +229,8 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
      *
      * @param holder The holder instance that is currently bound to the row whose
      *               alarm is cancelled.
-     * @param day    The day for which alarm is cancelled. The day is zero indexed and starts from monday.
+     * @param day    The day for which alarm is cancelled. The day is zero indexed
+     *               and starts from monday.
      */
     private void notifyDayAlarmCancelled(TimeRowHolder holder, int day) {
 
@@ -318,15 +294,11 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
     }
 
     private boolean[] getDayArr(TimeRowHolder holder) {
-        return new boolean[]{
-                holder.monday.isChecked(),
-                holder.tuesday.isChecked(),
-                holder.wednesday.isChecked(),
-                holder.thursday.isChecked(),
-                holder.friday.isChecked(),
-                holder.saturday.isChecked(),
-                holder.sunday.isChecked()
-        };
+        boolean[] isAlarmSetOnDay = new boolean[7];
+        for (int i = 0; i < 7; i++) {
+            isAlarmSetOnDay[i] = holder.days[i].isChecked();
+        }
+        return isAlarmSetOnDay;
     }
 
     class TimeRowHolder extends RecyclerView.ViewHolder {
@@ -336,13 +308,7 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
         TextView startTime;
         TextView endTime;
         Switch enableSwitch;
-        CheckBox monday;
-        CheckBox tuesday;
-        CheckBox wednesday;
-        CheckBox thursday;
-        CheckBox friday;
-        CheckBox saturday;
-        CheckBox sunday;
+        CheckBox[] days;
 
         /**
          * Listeners attached to the holder will only react to events
@@ -356,16 +322,18 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
             super(itemView);
             this.itemView = itemView;
             id = -1;
+            days = new CheckBox[]{
+                    itemView.findViewById(R.id.monday),
+                    itemView.findViewById(R.id.tuesday),
+                    itemView.findViewById(R.id.wednesday),
+                    itemView.findViewById(R.id.thursday),
+                    itemView.findViewById(R.id.friday),
+                    itemView.findViewById(R.id.saturday),
+                    itemView.findViewById(R.id.sunday)
+            };
             startTime = itemView.findViewById(R.id.start_time);
             endTime = itemView.findViewById(R.id.end_time);
             enableSwitch = itemView.findViewById(R.id.enable_switch);
-            monday = itemView.findViewById(R.id.monday);
-            tuesday = itemView.findViewById(R.id.tuesday);
-            wednesday = itemView.findViewById(R.id.wednesday);
-            thursday = itemView.findViewById(R.id.thursday);
-            friday = itemView.findViewById(R.id.friday);
-            saturday = itemView.findViewById(R.id.saturday);
-            sunday = itemView.findViewById(R.id.sunday);
             timePickerDialog = new TimePickerDialogFragment();
             View.OnClickListener timeChangeListener = new View.OnClickListener() {
                 @Override
@@ -379,7 +347,8 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
                             Calendar calendar = Calendar.getInstance();
                             calendar.set(Calendar.HOUR_OF_DAY, hour);
                             calendar.set(Calendar.MINUTE, minute);
-                            ((TextView) view).setText(DISPLAY_DATE_FORMAT.format(calendar.getTime()));
+                            ((TextView) view).setText(
+                                    DISPLAY_DATE_FORMAT.format(calendar.getTime()));
                             notifyTimeChanged(TimeRowHolder.this);
                         }
                     });
@@ -399,97 +368,22 @@ public class TimeListAdapter extends RecyclerView.Adapter<TimeListAdapter.TimeRo
             };
             startTime.setOnClickListener(timeChangeListener);
             endTime.setOnClickListener(timeChangeListener);
-            monday.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
-                    if (!isBound) {
-                        return;
+            for (int i = 0; i < 7; i++) {
+                final int finalI = i;
+                days[i].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
+                        if (!isBound) {
+                            return;
+                        }
+                        if (checked) {
+                            notifyDayAlarmSet(TimeRowHolder.this, finalI);
+                        } else {
+                            notifyDayAlarmCancelled(TimeRowHolder.this, finalI);
+                        }
                     }
-                    if (checked) {
-                        notifyDayAlarmSet(TimeRowHolder.this, 0);
-                    } else {
-                        notifyDayAlarmCancelled(TimeRowHolder.this, 0);
-                    }
-                }
-            });
-            tuesday.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
-                    if (!isBound) {
-                        return;
-                    }
-                    if (checked) {
-                        notifyDayAlarmSet(TimeRowHolder.this, 1);
-                    } else {
-                        notifyDayAlarmCancelled(TimeRowHolder.this, 1);
-                    }
-                }
-            });
-            wednesday.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
-                    if (!isBound) {
-                        return;
-                    }
-                    if (checked) {
-                        notifyDayAlarmSet(TimeRowHolder.this, 2);
-                    } else {
-                        notifyDayAlarmCancelled(TimeRowHolder.this, 2);
-                    }
-                }
-            });
-            thursday.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
-                    if (!isBound) {
-                        return;
-                    }
-                    if (checked) {
-                        notifyDayAlarmSet(TimeRowHolder.this, 3);
-                    } else {
-                        notifyDayAlarmCancelled(TimeRowHolder.this, 3);
-                    }
-                }
-            });
-            friday.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
-                    if (!isBound) {
-                        return;
-                    }
-                    if (checked) {
-                        notifyDayAlarmSet(TimeRowHolder.this, 4);
-                    } else {
-                        notifyDayAlarmCancelled(TimeRowHolder.this, 4);
-                    }
-                }
-            });
-            saturday.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
-                    if (!isBound) {
-                        return;
-                    }
-                    if (checked) {
-                        notifyDayAlarmSet(TimeRowHolder.this, 5);
-                    } else {
-                        notifyDayAlarmCancelled(TimeRowHolder.this, 5);
-                    }
-                }
-            });
-            sunday.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
-                    if (!isBound) {
-                        return;
-                    }
-                    if (checked) {
-                        notifyDayAlarmSet(TimeRowHolder.this, 6);
-                    } else {
-                        notifyDayAlarmCancelled(TimeRowHolder.this, 6);
-                    }
-                }
-            });
+                });
+            }
         }
     }
 }
