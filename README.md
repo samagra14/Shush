@@ -3,6 +3,7 @@
 [![API](https://img.shields.io/badge/API-16%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=16s)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![by-SDS-MDG](https://img.shields.io/badge/by-SDS%2C%20MDG-blue.svg)](https://mdg.sdslabs.co)
+[![Sputnik](https://sputnik.ci/conf/badge)](https://sputnik.ci/app#/builds/samagra14/Shush)
 
 Shush Me is an intelligent manager for your phone’s ringer. It manages the status of your ringer based on your location and /or your schedule. Now, gone are the days when you were caught by your teacher because of your phone.
 
