@@ -119,8 +119,8 @@ public class AlarmScheduler {
         }
 
         // get Day index of start Time
-        int i = getDay(startTime);
-        for (int j = i; j < 7 + i; j++) {
+        int dayForAlarm = getDay(startTime);
+        for (int j = dayForAlarm; j < 7 + dayForAlarm; j++) {
             int day = j % 7;
             Log.d(LOG_TAG + "Day-Val", String.valueOf(day));
             if (days[day]) {
@@ -319,11 +319,11 @@ public class AlarmScheduler {
      * For e.g. - Monday is 0, Tuesday is 1, ... and so on
      */
     private int getDay(Calendar calendar) {
-        int i = calendar.get(Calendar.DAY_OF_WEEK);
-        i -= 2;
-        if (i == -1) {
-            i += 7;
+        int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+        dayOfWeek -= 2;
+        if (dayOfWeek == -1) {
+            dayOfWeek += 7;
         }
-        return i;
+        return dayOfWeek;
     }
 }
