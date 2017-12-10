@@ -14,6 +14,7 @@ import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceBuffer;
+import com.mdg.droiders.samagra.shush.receivers.GeofenceBroadcastReceiver;
 
 import java.util.ArrayList;
 import java.util.List;

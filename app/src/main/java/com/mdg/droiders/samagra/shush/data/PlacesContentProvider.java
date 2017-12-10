@@ -102,7 +102,7 @@ public class PlacesContentProvider extends ContentProvider {
                 String id = uri.getPathSegments().get(1);
                 retCursor = db.query(PlacesContract.TimeEntry.TABLE_NAME,
                         projection,
-                        "id =?",
+                        "_id =?",
                         new String[]{id},
                         null,
                         null,
@@ -203,14 +203,14 @@ public class PlacesContentProvider extends ContentProvider {
                 // Get the place ID from the URI path
                 String id = uri.getPathSegments().get(1);
                 // Use selections/selectionArgs to filter for this ID
-                deletedRows = db.delete(PlacesContract.PlaceEntry.TABLE_NAME,"id=?",new String[]{id});
+                deletedRows = db.delete(PlacesContract.PlaceEntry.TABLE_NAME,"_id=?",new String[]{id});
                 break;
             // Handle the single item case, recognized by the ID included in the URI path
             case SINGLE_TIME_WITH_ID:
                 // Get the place ID from the URI path
                 String timeId = uri.getPathSegments().get(1);
                 // Use selections/selectionArgs to filter for this ID
-                deletedRows = db.delete(PlacesContract.TimeEntry.TABLE_NAME,"id=?", new String[]{timeId});
+                deletedRows = db.delete(PlacesContract.TimeEntry.TABLE_NAME,"_id=?", new String[]{timeId});
                 break;
             default:
                 throw new UnsupportedOperationException("Invalid uri: "+ uri);
@@ -254,7 +254,7 @@ public class PlacesContentProvider extends ContentProvider {
                 // Get the place ID from the URI path
                 id = uri.getPathSegments().get(1);
                 // Use selections/selectionArgs to filter for this ID
-                affectedRows = db.update(PlacesContract.TimeEntry.TABLE_NAME,contentValues,"id=?",
+                affectedRows = db.update(PlacesContract.TimeEntry.TABLE_NAME,contentValues,"_id=?",
                         new String[]{id});
                 break;
             // Default exception

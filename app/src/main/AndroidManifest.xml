@@ -13,12 +13,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="@string/your_google_places_api_key"/>
+            android:value="@string/your_google_places_api_key" />
 
-        <activity android:name=".MainActivity">
+        <activity android:name=".activities.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -32,11 +31,13 @@
             android:exported="false" />
 
         <receiver
-            android:name=".GeofenceBroadcastReceiver"
+            android:name=".receivers.GeofenceBroadcastReceiver"
             android:enabled="true"
-            android:exported="true"></receiver>
+            android:exported="true" />
+        <receiver android:name=".receivers.AlarmBroadcastReceiver" />
 
-        <receiver android:name=".AlarmBroadcastReceiver"/>
+        <activity android:name=".activities.TimeListActivity"
+            android:screenOrientation="portrait"/>
     </application>
 
 </manifest>

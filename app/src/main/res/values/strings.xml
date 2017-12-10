@@ -12,5 +12,8 @@
     <string name="silent_mode_activated">Silent mode activated</string>
     <string name="touch_to_relaunch">Touch to launch the app.</string>
     <string name="back_to_normal">Back to normal</string>
-    <string name="alarm_intent_extra_key">com.mdg.droiders.samagra.shush.ShouldSilence</string>
+    <string name="add_new_time">Add Shush Alarms</string>
+    <string name="alarm_intent_boolean_extra_key">com.mdg.droiders.samagra.shush.ShouldShush</string>
+    <string name="alarm_intent_long_extra_key">com.mdg.droiders.samagra.shush.TimeInMillis</string>
+    <string name="alarm_intent_int_extra_key">com.mdg.droiders.samagra.shush.AlarmID</string>
 </resources>
