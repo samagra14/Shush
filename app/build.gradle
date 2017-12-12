@@ -1,5 +1,7 @@
 apply plugin: 'com.android.application'
 
+def API_KEY = project.hasProperty('placesKey') ? placesKey : System.getenv('PlacesApiKey')
+
 android {
     compileSdkVersion 26
     buildToolsVersion '26.0.2'
@@ -10,6 +12,7 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders = [YOUR_GOOGLE_PLACES_API_KEY:API_KEY]
     }
     buildTypes {
         release {

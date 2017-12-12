@@ -36,5 +36,7 @@ notifications:
     slack: sdsmdg:hBRszERiXBQVCRKHljR1Ilwk
 
 script:
-  - ./gradlew build connectedCheck
-  - ./gradlew test
+  - ./gradlew build --stacktrace
+# Uncomment the lines below for android and JUnit tests respectively
+# - ./gradlew connectedCheck
+# - ./gradlew test
